@@ -1,4 +1,7 @@
-import { InputDataType } from './utils/sources'
+export type InputDataType = {
+  INDEX: number
+  [key: string]: number | undefined
+}
 
 export type TileTypePrefix = string
 export type TileType = `${TileTypePrefix}-${string}` | string
@@ -28,7 +31,7 @@ export type TileDatasourceType = {
   file_name: string
   label: string | null
   labely: string | null
-  table_rows: TableRow[] | null
+  table_rows: TableRowType[] | null
   content: InputDataType[]
   timeline: number[]
   entry_count: number

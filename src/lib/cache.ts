@@ -1,7 +1,7 @@
 import * as fs from 'fs'
 import path from 'path'
 import { getCachedFilePath, getCacheRootPath } from '../utils/filesystem'
-import { getCacheEndpoint } from '../utils/api'
+import { checkSecret, getCacheEndpoint } from '../utils/api'
 
 // read the data from the cache
 export async function readCache(
@@ -119,7 +119,11 @@ export async function writeBuffer(
 }
 
 // clear the content cache
-export async function flushCache() {
+export async function flushCache(secret: string): Promise<boolean | null> {
+  if (!checkSecret(secret)) {
+    return null
+  }
+
   const cache_root_path = getCacheRootPath()
   if (!fs.existsSync(cache_root_path)) {
     return true

@@ -3,8 +3,7 @@ import axios from 'axios'
 import https from 'https'
 
 // checkSecret with req parameter
-export function checkSecret(req: NextApiRequest): boolean {
-  const { secret } = req.query
+export function checkSecret(secret: string): boolean {
   const api_secret = process.env.API_SECRET
 
   if (!api_secret) {

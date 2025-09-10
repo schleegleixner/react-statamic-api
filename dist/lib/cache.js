@@ -10,7 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import * as fs from 'fs';
 import path from 'path';
 import { getCachedFilePath, getCacheRootPath } from '../utils/filesystem';
-import { getCacheEndpoint } from '../utils/api';
+import { checkSecret, getCacheEndpoint } from '../utils/api';
 // read the data from the cache
 export function readCache(content_type_1) {
     return __awaiter(this, arguments, void 0, function* (content_type, folder = false, id = false, ignore_stale = false) {
@@ -97,8 +97,11 @@ export function writeBuffer(file_path, buffer) {
     });
 }
 // clear the content cache
-export function flushCache() {
+export function flushCache(secret) {
     return __awaiter(this, void 0, void 0, function* () {
+        if (!checkSecret(secret)) {
+            return null;
+        }
         const cache_root_path = getCacheRootPath();
         if (!fs.existsSync(cache_root_path)) {
             return true;

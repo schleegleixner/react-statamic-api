@@ -20,7 +20,7 @@ export type TableRowType = {
   label: string | null
   unit?: string | null
   multiplier?: number | null
-  visible?: Boolean | null
+  visible?: boolean | null
   variant?: string | null
   icon?: string | null
   decimals?: number | null

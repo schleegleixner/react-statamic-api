@@ -9,7 +9,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import axios from 'axios';
 import https from 'https';
-// checkSecret with req parameter
 export function checkSecret(secret) {
     const api_secret = process.env.API_SECRET;
     if (!api_secret) {

@@ -10,6 +10,42 @@ import { getCachePath } from '../utils/filesystem'
 import getDataSource from '../api/getDataSource'
 import { getTimeline } from '../utils/sources'
 import { getCollection, getContent } from '../lib/content'
+import { ResultType, StepResultType } from '../types/cms'
+import { checkSecret } from '../utils/api'
+import { flushCache, revalidateContent } from './cache'
+
+export async function fetchFromStatamic(): Promise<ResultType> {
+  const results: StepResultType[] = []
+
+  const flushResult = await flushCache()
+
+  results.push({ name: 'flush', success: flushResult === true })
+
+  const rebuildResult = await rebuildCache()
+  results.push({
+    name: 'rebuild',
+    success: rebuildResult !== false,
+    payload: rebuildResult,
+  })
+
+  const revalidationResult = await revalidateContent()
+  if (!revalidationResult.success) {
+    results.push({
+      name: 'revalidation',
+      success: false,
+      error: revalidationResult.error,
+    })
+  } else {
+    results.push({ name: 'revalidation', success: true })
+  }
+
+  const overallSuccess = results.every(step => step.success)
+  const message = overallSuccess
+    ? 'Success! Cache has been flushed and rebuilt.'
+    : 'Some steps failed. Check the results for more information.'
+
+  return { message, results, success: overallSuccess }
+}
 
 async function fetchFromRemote(
   content_type: string = 'content',

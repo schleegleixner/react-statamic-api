@@ -103,3 +103,19 @@ export function getCompleteTileset() {
         return updated_collection;
     });
 }
+export function getImageMeta(file_name) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let images = readLocalStorage('collection.images');
+        if (!images) {
+            images = (yield getCollection('images'));
+            if (images) {
+                writeLocalStorage('collection.images', images, 60); // cache for 1 hour
+            }
+        }
+        if (!images || images.length === 0) {
+            return false;
+        }
+        const image = images.find((img) => img.file_name === file_name);
+        return image !== null && image !== void 0 ? image : false;
+    });
+}

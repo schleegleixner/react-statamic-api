@@ -61,7 +61,7 @@ export function normalizeHeaders(data: PayloadDataType[]): PayloadDataType[] {
           ? 'INDEX'
           : key
       normalizedEntry[normalizedKey] = entry[key]
-      
+
       // remove leading and trailing whitespace from keys
       const trimmedKey = normalizedKey.trim()
       normalizedEntry[trimmedKey] = entry[key]

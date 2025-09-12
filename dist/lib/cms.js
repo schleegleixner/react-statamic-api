@@ -14,6 +14,36 @@ import { getCachePath } from '../utils/filesystem';
 import getDataSource from '../api/getDataSource';
 import { getTimeline } from '../utils/sources';
 import { getCollection, getContent } from '../lib/content';
+import { flushCache, revalidateContent } from './cache';
+export function fetchFromStatamic() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const results = [];
+        const flushResult = yield flushCache();
+        results.push({ name: 'flush', success: flushResult === true });
+        const rebuildResult = yield rebuildCache();
+        results.push({
+            name: 'rebuild',
+            success: rebuildResult !== false,
+            payload: rebuildResult,
+        });
+        const revalidationResult = yield revalidateContent();
+        if (!revalidationResult.success) {
+            results.push({
+                name: 'revalidation',
+                success: false,
+                error: revalidationResult.error,
+            });
+        }
+        else {
+            results.push({ name: 'revalidation', success: true });
+        }
+        const overallSuccess = results.every(step => step.success);
+        const message = overallSuccess
+            ? 'Success! Cache has been flushed and rebuilt.'
+            : 'Some steps failed. Check the results for more information.';
+        return { message, results, success: overallSuccess };
+    });
+}
 function fetchFromRemote() {
     return __awaiter(this, arguments, void 0, function* (content_type = 'content', collection_id = 'tile', id = false) {
         // get the data from the API

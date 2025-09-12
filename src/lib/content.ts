@@ -3,6 +3,7 @@ import { readCache } from '../lib/cache'
 import { fetchJSON, getCacheEndpoint } from '../utils/api'
 import { TileDatasourceType, TileDataType } from '../types/tiles'
 import { readLocalStorage, writeLocalStorage } from '../utils/localstorage'
+import { ImageMetaInterface } from '../types/files'
 
 async function handleRequest(
   content_type: string = 'content',
@@ -128,4 +129,26 @@ export async function getCompleteTileset(): Promise<TileDataType[]> {
   })
 
   return updated_collection
+}
+
+export async function getImageMeta(
+  file_name: string,
+): Promise<ImageMetaInterface | false> {
+  let images = readLocalStorage('collection.images') as ImageMetaInterface[]
+  if (!images) {
+    images = (await getCollection('images')) as ImageMetaInterface[]
+    if (images) {
+      writeLocalStorage('collection.images', images, 60) // cache for 1 hour
+    }
+  }
+
+  if (!images || images.length === 0) {
+    return false
+  }
+
+  const image = images.find(
+    (img: ImageMetaInterface) => img.file_name === file_name,
+  )
+
+  return image ?? false
 }

@@ -70,8 +70,13 @@ function createPopulatedCollection() {
         const collection = yield getCollection(collection_id);
         yield Promise.all(collection.map((entry) => __awaiter(this, void 0, void 0, function* () {
             var _a;
+            // tiles
             if (entry.tile_id) {
                 entry.content = yield getContent(collection_id, entry.tile_id);
+            }
+            // pages
+            if (collection_id === 'pages') {
+                entry.content = yield getContent('pages', entry.slug);
             }
             // sources
             if (entry.file_name) {
@@ -126,6 +131,7 @@ export function rebuildCache() {
     return __awaiter(this, void 0, void 0, function* () {
         var _a, _b, _c, _d;
         const collections = ['pages', 'sources', 'images', 'tiles'];
+        const taxonomies = ['icons', 'action_fields', 'sdg_targets'];
         const global = ['seo', 'footer'];
         const data = {};
         const results = [];
@@ -156,6 +162,11 @@ export function rebuildCache() {
                     name: 'source::' + source.file_name,
                     success: result !== null,
                 });
+            }
+            // get all taxonomy
+            for (const taxonomy_id of taxonomies) {
+                const result = yield fetchFromRemote('taxonomy', taxonomy_id);
+                results.push({ name: 'taxonomy::' + taxonomy_id, success: !!result });
             }
             // get all global data
             for (const global_id of global) {

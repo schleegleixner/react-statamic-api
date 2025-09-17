@@ -9,8 +9,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import { getCachedData } from '../lib/content';
 export default function getPageData(id_1) {
-    return __awaiter(this, arguments, void 0, function* (id, default_value = []) {
-        const data = yield getCachedData(`content?collection=page&id=${id}`);
+    return __awaiter(this, arguments, void 0, function* (id, locale = 'default', default_value = []) {
+        const data = yield getCachedData(`content?collection=page&id=${id}&locale=${locale}`);
         return data || default_value;
     });
 }

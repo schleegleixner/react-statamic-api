@@ -38,6 +38,11 @@ export function getGlobal(global_id) {
         return handleRequest('global', global_id);
     });
 }
+export function getTaxonomy(taxonomy_id) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return handleRequest('taxonomy', taxonomy_id);
+    });
+}
 export function getCollection() {
     return __awaiter(this, arguments, void 0, function* (collection_id = 'tiles') {
         return handleRequest('collection', collection_id);

@@ -6,6 +6,7 @@ export {
   getGlobal,
   getImageMeta,
   getPopulatedCollection,
+  getTaxonomy,
 } from './content'
 
 export { fetchFromStatamic, getAPI } from './cms'

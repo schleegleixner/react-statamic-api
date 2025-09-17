@@ -16,7 +16,7 @@ async function handleRequest(
   if (!cache_data) {
     cache_data = (await readCache(content_type, collection_id, id)) || null
   }
-  
+
   if (cache_data) {
     writeLocalStorage(key, cache_data, 15) // cache for 15 minutes
     return cache_data // return the cached data
@@ -38,6 +38,10 @@ export async function getContent(
 
 export async function getGlobal(global_id: string): Promise<any> {
   return handleRequest('global', global_id)
+}
+
+export async function getTaxonomy(taxonomy_id: string): Promise<any> {
+  return handleRequest('taxonomy', taxonomy_id)
 }
 
 export async function getCollection(

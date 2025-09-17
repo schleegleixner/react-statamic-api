@@ -11,7 +11,6 @@ import getDataSource from '../api/getDataSource'
 import { getTimeline } from '../utils/sources'
 import { getCollection, getContent } from '../lib/content'
 import { ResultType, StepResultType } from '../types/cms'
-import { checkSecret } from '../utils/api'
 import { flushCache, revalidateContent } from './cache'
 
 export async function fetchFromStatamic(): Promise<ResultType> {
@@ -85,8 +84,14 @@ async function createPopulatedCollection(
 
   await Promise.all(
     collection.map(async (entry: any) => {
+      // tiles
       if (entry.tile_id) {
         entry.content = await getContent(collection_id, entry.tile_id)
+      }
+
+      // pages
+      if (collection_id === 'pages') {
+        entry.content = await getContent('pages', entry.slug)
       }
 
       // sources
@@ -137,10 +142,7 @@ export async function getAPI(
   return null
 }
 
-async function downloadFile(
-  file_path: string,
-  folder: string,
-): Promise<any> {
+async function downloadFile(file_path: string, folder: string): Promise<any> {
   // if endpoint has no http(s):// prefix, prepend the CMS endpoint
   const endpoint = file_path.startsWith('http')
     ? file_path
@@ -164,6 +166,7 @@ type RebuildResult = {
 
 export async function rebuildCache() {
   const collections = ['pages', 'sources', 'images', 'tiles']
+  const taxonomies = ['icons', 'action_fields', 'sdg_targets']
   const global = ['seo', 'footer']
   const data: any = {}
 
@@ -197,6 +200,12 @@ export async function rebuildCache() {
         name: 'source::' + source.file_name,
         success: result !== null,
       })
+    }
+
+    // get all taxonomy
+    for (const taxonomy_id of taxonomies) {
+      const result = await fetchFromRemote('taxonomy', taxonomy_id)
+      results.push({ name: 'taxonomy::' + taxonomy_id, success: !!result })
     }
 
     // get all global data

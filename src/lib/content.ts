@@ -52,9 +52,16 @@ export async function getCollection(
 
 export async function getPopulatedCollection(
   collection_id: string = 'tiles',
+  locale: string = 'default',
 ): Promise<any> {
   const cache_data =
-    (await readCache('collection', `${collection_id}.populated`)) || null
+    (await readCache(
+      'collection',
+      `${collection_id}.populated`,
+      false,
+      false,
+      locale,
+    )) || null
   if (cache_data) {
     return cache_data // return the cached data
   }

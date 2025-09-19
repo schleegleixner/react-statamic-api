@@ -11,10 +11,11 @@ import { readApiCache, writeApiCache, writeBuffer, writeContentCache, } from '..
 import { fetchFile, fetchJSON, getCMSEndpoint } from '../utils/api';
 import path from 'path';
 import { getCachePath } from '../utils/filesystem';
-import getDataSource from '../api/getDataSource';
+import getDataFile from '../api/getDataFile';
 import { getTimeline } from '../utils/sources';
 import { getCollection, getContent } from '../lib/content';
 import { flushCache, revalidateContent } from './cache';
+import pLimit from 'p-limit';
 export function fetchFromStatamic() {
     return __awaiter(this, void 0, void 0, function* () {
         const results = [];
@@ -80,7 +81,7 @@ function createPopulatedCollection() {
             }
             // sources
             if (entry.file_name) {
-                const content = yield getDataSource(entry.file_name);
+                const content = yield getDataFile(entry.file_name);
                 const timeline = getTimeline(content);
                 entry.content = content;
                 entry.timeline = timeline;
@@ -102,6 +103,7 @@ export function getAPI(api_1) {
         }
         // get the data from the API
         const endpoint = `${getCMSEndpoint()}${api}`;
+        console.log('Fetching API:', endpoint);
         const payload = yield fetchJSON(endpoint);
         if (payload !== null) {
             // save the data to the cache
@@ -135,52 +137,28 @@ export function rebuildCache() {
         const global = ['seo', 'footer'];
         const data = {};
         const results = [];
-        for (const collection of collections) {
-            // get the collection data
-            data[collection] = yield fetchFromRemote('collection', collection);
-        }
-        // rebuild content
+        const limit = pLimit(10); // limit concurrent requests
+        const collection_results = yield Promise.all(collections.map(c => fetchFromRemote('collection', c)));
+        collections.forEach((c, i) => (data[c] = collection_results[i]));
         try {
-            for (const tile of (_a = data.tiles) !== null && _a !== void 0 ? _a : []) {
-                const result = yield fetchContent('tile', tile.tile_id);
-                results.push({ name: 'tile::' + tile.tile_id, success: !!result });
-            }
-            for (const page of (_b = data.pages) !== null && _b !== void 0 ? _b : []) {
-                const result = yield fetchContent('page', page.slug);
-                results.push({ name: 'page::' + page.slug, success: !!result });
-            }
-            for (const image of (_c = data.images) !== null && _c !== void 0 ? _c : []) {
-                const result = yield downloadFile(image.url, 'images');
-                results.push({
-                    name: 'image::' + image.file_name,
-                    success: result !== null,
-                });
-            }
-            for (const source of (_d = data.sources) !== null && _d !== void 0 ? _d : []) {
-                const result = yield downloadFile(source.url, 'source');
-                results.push({
-                    name: 'source::' + source.file_name,
-                    success: result !== null,
-                });
-            }
-            // get all taxonomy
-            for (const taxonomy_id of taxonomies) {
-                const result = yield fetchFromRemote('taxonomy', taxonomy_id);
-                results.push({ name: 'taxonomy::' + taxonomy_id, success: !!result });
-            }
-            // get all global data
-            for (const global_id of global) {
-                const result = yield fetchFromRemote('global', global_id);
-                results.push({ name: 'global::' + global_id, success: !!result });
-            }
-            // rebuild collections
-            for (const collection of collections) {
-                createPopulatedCollection(collection);
-            }
+            const tasks = [];
+            ((_a = data.tiles) !== null && _a !== void 0 ? _a : []).forEach((tile) => tasks.push(limit(() => fetchContent('tile', tile.tile_id).then(r => results.push({ name: 'tile::' + tile.tile_id, success: !!r })))));
+            ((_b = data.pages) !== null && _b !== void 0 ? _b : []).forEach((page) => tasks.push(limit(() => fetchContent('page', page.slug).then(r => results.push({ name: 'page::' + page.slug, success: !!r })))));
+            ((_c = data.images) !== null && _c !== void 0 ? _c : []).forEach((image) => tasks.push(limit(() => downloadFile(image.url, 'images').then(r => results.push({
+                name: 'image::' + image.file_name,
+                success: r !== null,
+            })))));
+            ((_d = data.sources) !== null && _d !== void 0 ? _d : []).forEach((source) => tasks.push(limit(() => downloadFile(source.url, 'source').then(r => results.push({
+                name: 'source::' + source.file_name,
+                success: r !== null,
+            })))));
+            taxonomies.forEach(t => tasks.push(limit(() => fetchFromRemote('taxonomy', t).then(r => results.push({ name: 'taxonomy::' + t, success: !!r })))));
+            global.forEach(g => tasks.push(limit(() => fetchFromRemote('global', g).then(r => results.push({ name: 'global::' + g, success: !!r })))));
+            yield Promise.all(tasks);
+            collections.forEach(c => createPopulatedCollection(c));
             return results;
         }
         catch (error) {
-            // eslint-disable-next-line no-console
             console.error('Rebuild cache error:', error);
             return false;
         }

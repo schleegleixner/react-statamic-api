@@ -13,11 +13,11 @@ import { getCachedFilePath, getCacheRootPath } from '../utils/filesystem';
 import { getCacheEndpoint } from '../utils/api';
 // read the data from the cache
 export function readCache(content_type_1) {
-    return __awaiter(this, arguments, void 0, function* (content_type, folder = false, id = false, ignore_stale = false) {
+    return __awaiter(this, arguments, void 0, function* (content_type, folder = false, id = false, ignore_stale = false, locale = 'default') {
         var _a;
         try {
             const response = yield fetch(getCacheEndpoint('cache') +
-                `?content_type=${content_type}&folder=${folder}&id=${id}&ignore_stale=${ignore_stale}`, { next: { tags: ['cached_data'] } });
+                `?content_type=${content_type}&folder=${folder}&id=${id}&ignore_stale=${ignore_stale}&locale=${locale}`, { next: { tags: ['cached_data'] } });
             const cache_data = yield response.text();
             const json_data = JSON.parse(cache_data);
             return (_a = json_data.payload) !== null && _a !== void 0 ? _a : json_data;
@@ -29,7 +29,11 @@ export function readCache(content_type_1) {
 }
 export function readApiCache(file_name) {
     return __awaiter(this, void 0, void 0, function* () {
-        return readCache('api', false, file_name);
+        const result = readCache('api', false, file_name);
+        if (result) {
+            return result;
+        }
+        return readCache('data', false, file_name);
     });
 }
 // write data to the cache

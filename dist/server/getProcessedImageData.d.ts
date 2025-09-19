@@ -1,1 +1,1 @@
-export default function processedImageData(sharp: typeof import('sharp'), file_name: string, width: number, height?: number | null, quality?: number): Promise<Buffer | false>;
+export default function processedImageData(sharp: typeof import('sharp') | null, file_name: string, width: number, height?: number | null, quality?: number): Promise<Buffer | false>;

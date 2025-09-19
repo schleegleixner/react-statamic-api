@@ -7,11 +7,12 @@ import {
 import { fetchFile, fetchJSON, getCMSEndpoint } from '../utils/api'
 import path from 'path'
 import { getCachePath } from '../utils/filesystem'
-import getDataSource from '../api/getDataSource'
+import getDataFile from '../api/getDataFile'
 import { getTimeline } from '../utils/sources'
 import { getCollection, getContent } from '../lib/content'
 import { ResultType, StepResultType } from '../types/cms'
 import { flushCache, revalidateContent } from './cache'
+import pLimit from 'p-limit'
 
 export async function fetchFromStatamic(): Promise<ResultType> {
   const results: StepResultType[] = []
@@ -96,7 +97,7 @@ async function createPopulatedCollection(
 
       // sources
       if (entry.file_name) {
-        const content = await getDataSource(entry.file_name)
+        const content = await getDataFile(entry.file_name)
         const timeline = getTimeline(content)
         entry.content = content
         entry.timeline = timeline
@@ -131,6 +132,7 @@ export async function getAPI(
 
   // get the data from the API
   const endpoint = `${getCMSEndpoint()}${api}`
+  console.log('Fetching API:', endpoint)
   const payload = await fetchJSON(endpoint)
 
   if (payload !== null) {
@@ -169,59 +171,88 @@ export async function rebuildCache() {
   const taxonomies = ['icons', 'action_fields', 'sdg_targets']
   const global = ['seo', 'footer']
   const data: any = {}
-
   const results: RebuildResult[] = []
 
-  for (const collection of collections) {
-    // get the collection data
-    data[collection] = await fetchFromRemote('collection', collection)
-  }
+  const limit = pLimit(10) // limit concurrent requests
 
-  // rebuild content
+  const collection_results = await Promise.all(
+    collections.map(c => fetchFromRemote('collection', c)),
+  )
+  collections.forEach((c, i) => (data[c] = collection_results[i]))
+
   try {
-    for (const tile of data.tiles ?? []) {
-      const result = await fetchContent('tile', tile.tile_id)
-      results.push({ name: 'tile::' + tile.tile_id, success: !!result })
-    }
-    for (const page of data.pages ?? []) {
-      const result = await fetchContent('page', page.slug)
-      results.push({ name: 'page::' + page.slug, success: !!result })
-    }
-    for (const image of data.images ?? []) {
-      const result = await downloadFile(image.url, 'images')
-      results.push({
-        name: 'image::' + image.file_name,
-        success: result !== null,
-      })
-    }
-    for (const source of data.sources ?? []) {
-      const result = await downloadFile(source.url, 'source')
-      results.push({
-        name: 'source::' + source.file_name,
-        success: result !== null,
-      })
-    }
+    const tasks: Promise<any>[] = []
 
-    // get all taxonomy
-    for (const taxonomy_id of taxonomies) {
-      const result = await fetchFromRemote('taxonomy', taxonomy_id)
-      results.push({ name: 'taxonomy::' + taxonomy_id, success: !!result })
-    }
+    ;(data.tiles ?? []).forEach((tile: { tile_id: string }) =>
+      tasks.push(
+        limit(() =>
+          fetchContent('tile', tile.tile_id).then(r =>
+            results.push({ name: 'tile::' + tile.tile_id, success: !!r }),
+          ),
+        ),
+      ),
+    )
+    ;(data.pages ?? []).forEach((page: { slug: string }) =>
+      tasks.push(
+        limit(() =>
+          fetchContent('page', page.slug).then(r =>
+            results.push({ name: 'page::' + page.slug, success: !!r }),
+          ),
+        ),
+      ),
+    )
+    ;(data.images ?? []).forEach((image: { url: string; file_name: string }) =>
+      tasks.push(
+        limit(() =>
+          downloadFile(image.url, 'images').then(r =>
+            results.push({
+              name: 'image::' + image.file_name,
+              success: r !== null,
+            }),
+          ),
+        ),
+      ),
+    )
+    ;(data.sources ?? []).forEach(
+      (source: { url: string; file_name: string }) =>
+        tasks.push(
+          limit(() =>
+            downloadFile(source.url, 'source').then(r =>
+              results.push({
+                name: 'source::' + source.file_name,
+                success: r !== null,
+              }),
+            ),
+          ),
+        ),
+    )
 
-    // get all global data
-    for (const global_id of global) {
-      const result = await fetchFromRemote('global', global_id)
-      results.push({ name: 'global::' + global_id, success: !!result })
-    }
+    taxonomies.forEach(t =>
+      tasks.push(
+        limit(() =>
+          fetchFromRemote('taxonomy', t).then(r =>
+            results.push({ name: 'taxonomy::' + t, success: !!r }),
+          ),
+        ),
+      ),
+    )
 
-    // rebuild collections
-    for (const collection of collections) {
-      createPopulatedCollection(collection)
-    }
+    global.forEach(g =>
+      tasks.push(
+        limit(() =>
+          fetchFromRemote('global', g).then(r =>
+            results.push({ name: 'global::' + g, success: !!r }),
+          ),
+        ),
+      ),
+    )
+
+    await Promise.all(tasks)
+
+    collections.forEach(c => createPopulatedCollection(c))
 
     return results
   } catch (error) {
-    // eslint-disable-next-line no-console
     console.error('Rebuild cache error:', error)
     return false
   }

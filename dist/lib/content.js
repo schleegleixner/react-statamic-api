@@ -49,8 +49,8 @@ export function getCollection() {
     });
 }
 export function getPopulatedCollection() {
-    return __awaiter(this, arguments, void 0, function* (collection_id = 'tiles') {
-        const cache_data = (yield readCache('collection', `${collection_id}.populated`)) || null;
+    return __awaiter(this, arguments, void 0, function* (collection_id = 'tiles', locale = 'default') {
+        const cache_data = (yield readCache('collection', `${collection_id}.populated`, false, false, locale)) || null;
         if (cache_data) {
             return cache_data; // return the cached data
         }

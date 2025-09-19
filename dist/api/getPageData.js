@@ -7,10 +7,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { getCachedData } from '../lib/content';
+import { getPopulatedCollection } from '../lib/content';
 export default function getPageData(id_1) {
     return __awaiter(this, arguments, void 0, function* (id, locale = 'default', default_value = []) {
-        const data = yield getCachedData(`content?collection=page&id=${id}&locale=${locale}`);
-        return data || default_value;
+        const collection = yield getPopulatedCollection('pages', locale);
+        // find page in collection
+        if (collection && collection.length > 0) {
+            const page = collection.find((item) => item.slug === id);
+            if (page) {
+                return page;
+            }
+        }
+        return default_value;
     });
 }

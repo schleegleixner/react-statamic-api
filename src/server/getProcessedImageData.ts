@@ -1,9 +1,9 @@
 import { getCachePath } from '../utils/filesystem'
-import fs from 'fs/promises'
+import fs from 'fs'
 import path from 'path'
 
 export default async function processedImageData(
-  sharp: typeof import('sharp'),
+  sharp: typeof import('sharp') | null,
   file_name: string,
   width: number,
   height: number | null = null,
@@ -24,22 +24,27 @@ export default async function processedImageData(
   const cache_path = path.join(cache_dir, deriv_name)
 
   try {
-    await fs.mkdir(cache_dir, { recursive: true })
+    await fs.promises.mkdir(cache_dir, { recursive: true })
 
     try {
-      const cached_file = await fs.readFile(cache_path)
+      const cached_file = await fs.promises.readFile(cache_path)
       return cached_file
     } catch {
       // no cached file, continue
     }
 
-    const buffer = await fs.readFile(src_path)
+    const buffer = await fs.promises.readFile(src_path)
+
+    if (!sharp) {
+      return buffer
+    }
+
     const data = await sharp(buffer)
       .resize(width, height)
       .jpeg({ quality })
       .toBuffer()
 
-    fs.writeFile(cache_path, new Uint8Array(data)).catch(() => void 0)
+    fs.writeFile(cache_path, new Uint8Array(data), () => void 0)
     return data
   } catch {
     return false

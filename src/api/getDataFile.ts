@@ -8,7 +8,7 @@ import {
 } from '../utils/payload'
 import { findDataFile } from '../utils/filesystem'
 
-export default async function getDataSource(file_name: string) {
+export default async function getDataFile(file_name: string) {
   const sanitized_file_name = path.basename(file_name)
   const file_path = findDataFile(sanitized_file_name)
 

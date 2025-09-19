@@ -1,1 +1,1 @@
-export { checkSecret, getCacheEndpoint } from './api';
+export { checkSecret } from './api';

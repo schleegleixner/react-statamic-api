@@ -8,7 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import { getCachePath } from '../utils/filesystem';
-import fs from 'fs/promises';
+import fs from 'fs';
 import path from 'path';
 export default function processedImageData(sharp_1, file_name_1, width_1) {
     return __awaiter(this, arguments, void 0, function* (sharp, file_name, width, height = null, quality = 80) {
@@ -24,20 +24,23 @@ export default function processedImageData(sharp_1, file_name_1, width_1) {
         const deriv_name = `${base}_${width}x${height !== null && height !== void 0 ? height : 'auto'}_q${quality}.jpg`;
         const cache_path = path.join(cache_dir, deriv_name);
         try {
-            yield fs.mkdir(cache_dir, { recursive: true });
+            yield fs.promises.mkdir(cache_dir, { recursive: true });
             try {
-                const cached_file = yield fs.readFile(cache_path);
+                const cached_file = yield fs.promises.readFile(cache_path);
                 return cached_file;
             }
             catch (_a) {
                 // no cached file, continue
             }
-            const buffer = yield fs.readFile(src_path);
+            const buffer = yield fs.promises.readFile(src_path);
+            if (!sharp) {
+                return buffer;
+            }
             const data = yield sharp(buffer)
                 .resize(width, height)
                 .jpeg({ quality })
                 .toBuffer();
-            fs.writeFile(cache_path, new Uint8Array(data)).catch(() => void 0);
+            fs.writeFile(cache_path, new Uint8Array(data), () => void 0);
             return data;
         }
         catch (_b) {

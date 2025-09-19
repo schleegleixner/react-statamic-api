@@ -2,6 +2,7 @@ import * as fs from 'fs'
 import path from 'path'
 import { getCachedFilePath, getCacheRootPath } from '../utils/filesystem'
 import { getCacheEndpoint } from '../utils/api'
+import { findDataFile } from '../utils/filesystem'
 
 // read the data from the cache
 export async function readCache(
@@ -9,11 +10,12 @@ export async function readCache(
   folder: string | boolean = false,
   id: string | number | boolean = false,
   ignore_stale: boolean = false,
+  locale: string = 'default',
 ) {
   try {
     const response = await fetch(
       getCacheEndpoint('cache') +
-        `?content_type=${content_type}&folder=${folder}&id=${id}&ignore_stale=${ignore_stale}`,
+        `?content_type=${content_type}&folder=${folder}&id=${id}&ignore_stale=${ignore_stale}&locale=${locale}`,
       { next: { tags: ['cached_data'] } },
     )
     const cache_data = await response.text()
@@ -26,7 +28,13 @@ export async function readCache(
 }
 
 export async function readApiCache(file_name: string) {
-  return readCache('api', false, file_name)
+  const result = readCache('api', false, file_name)
+
+  if (result) {
+    return result
+  }
+
+  return readCache('data', false, file_name)
 }
 
 // write data to the cache

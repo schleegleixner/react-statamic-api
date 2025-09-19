@@ -1,1 +1,1 @@
-export * from './processImageData';
+export * from './getProcessedImageData';

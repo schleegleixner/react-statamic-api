@@ -43,7 +43,7 @@ export function fetchJSON(endpoint) {
         }
         catch (error) {
             // eslint-disable-next-line no-console
-            console.error('fetchJSON error:', error);
+            console.error('fetchJSON error:', endpoint, error);
             return null;
         }
     });

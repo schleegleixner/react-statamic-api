@@ -53,6 +53,7 @@ export function findDataFile(filename: string | boolean = false) {
   // check if file exists in any of the paths
   for (const folder of folders) {
     const full_path = getCachePath(null, folder, filename)
+
     if (fs.existsSync(full_path)) {
       return full_path
     }

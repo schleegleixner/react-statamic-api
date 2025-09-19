@@ -4,7 +4,7 @@ export declare function getContent(collection_id?: string, id?: string | number 
 export declare function getGlobal(global_id: string): Promise<any>;
 export declare function getTaxonomy(taxonomy_id: string): Promise<any>;
 export declare function getCollection(collection_id?: string): Promise<any>;
-export declare function getPopulatedCollection(collection_id?: string): Promise<any>;
+export declare function getPopulatedCollection(collection_id?: string, locale?: string): Promise<any>;
 export declare function getCachedData(api: string): Promise<any>;
 export declare function getCompleteTileset(): Promise<TileDataType[]>;
 export declare function getImageMeta(file_name: string): Promise<ImageMetaInterface | false>;

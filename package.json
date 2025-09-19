@@ -8,11 +8,6 @@
       "import": "./dist/index.js",
       "require": "./dist/index.js",
       "types": "./dist/index.d.ts"
-    },
-    "./server": {
-      "import": "./dist/server.js",
-      "require": "./dist/server.js",
-      "types": "./dist/server.d.ts"
     }
   },
   "files": [
@@ -44,6 +39,7 @@
   "dependencies": {
     "axios": "^1.11.0",
     "next": "^15.5.2",
+    "p-limit": "^7.1.1",
     "papaparse": "^5.5.3"
   },
   "peerDependencies": {

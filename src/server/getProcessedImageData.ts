@@ -2,7 +2,7 @@ import { getCachePath } from '../utils/filesystem'
 import fs from 'fs'
 import path from 'path'
 
-export default async function processedImageData(
+export default async function getProcessedImageData(
   sharp: typeof import('sharp') | null,
   file_name: string,
   width: number,
@@ -45,6 +45,7 @@ export default async function processedImageData(
       .toBuffer()
 
     fs.writeFile(cache_path, new Uint8Array(data), () => void 0)
+
     return data
   } catch {
     return false

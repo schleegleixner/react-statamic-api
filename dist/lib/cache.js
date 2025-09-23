@@ -50,15 +50,15 @@ function writeCache(file_path_1, data_1) {
     });
 }
 // write content data to the cache
-export function writeContentCache(content_type_1) {
-    return __awaiter(this, arguments, void 0, function* (content_type, folder_path = false, id = false, data, lifetime = false) {
-        yield writeCache(getCachedFilePath(content_type, folder_path, id), data, lifetime); // write the data to the cache
+export function writeContentCache() {
+    return __awaiter(this, arguments, void 0, function* (locale = 'default', content_type, folder_path = false, id = false, data, lifetime = false) {
+        yield writeCache(getCachedFilePath(locale, content_type, folder_path, id), data, lifetime); // write the data to the cache
     });
 }
 // write API data to the cache
 export function writeApiCache(file_name_1, data_1) {
     return __awaiter(this, arguments, void 0, function* (file_name, data, lifetime = 6 * 60) {
-        writeContentCache('api', false, file_name, data, lifetime);
+        writeContentCache('default', 'api', false, file_name, data, lifetime);
     });
 }
 // write data to a file
@@ -113,7 +113,7 @@ export function flushCache() {
                 continue;
             }
             for (const entry of fs.readdirSync(lang_path)) {
-                if (entry === 'data') {
+                if (entry === 'api') {
                     continue;
                 }
                 const entry_path = path.join(lang_path, entry);

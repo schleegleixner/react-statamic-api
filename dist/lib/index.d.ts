@@ -1,2 +1,1 @@
-export { getContent, getCollection, getCachedData, getCompleteTileset, getGlobal, getImageMeta, getPopulatedCollection, getTaxonomy, } from './content';
-export { fetchFromStatamic, getAPI } from './cms';
+export { getContent, getCompleteTileset as getTileset, getGlobal, getImageMeta, getPopulatedCollection as getCollection, getTaxonomy, } from './content';

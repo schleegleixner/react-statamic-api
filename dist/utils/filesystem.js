@@ -21,9 +21,8 @@ export function getCachePath(language = null, content_type = 'content', folder =
         .join('/');
     return path;
 }
-export function getCachedFilePath(content_type = 'content', folder = false, id) {
-    const current_language = null; // TBD
-    return getCachePath(current_language, content_type, id ? folder : false, `${id || folder || 'default'}.json`);
+export function getCachedFilePath(locale = 'default', content_type = 'content', folder = false, id) {
+    return getCachePath(locale, content_type, id ? folder : false, `${id || folder || 'default'}.json`);
 }
 export function findDataFile(filename = false) {
     const folders = ['data', 'source'];

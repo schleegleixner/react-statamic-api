@@ -2,7 +2,6 @@ import * as fs from 'fs'
 import path from 'path'
 import { getCachedFilePath, getCacheRootPath } from '../utils/filesystem'
 import { getCacheEndpoint } from '../utils/api'
-import { findDataFile } from '../utils/filesystem'
 
 // read the data from the cache
 export async function readCache(
@@ -62,6 +61,7 @@ async function writeCache(
 
 // write content data to the cache
 export async function writeContentCache(
+  locale: string = 'default',
   content_type: string,
   folder_path: string | boolean = false,
   id: string | number | boolean = false,
@@ -69,7 +69,7 @@ export async function writeContentCache(
   lifetime: number | boolean = false,
 ) {
   await writeCache(
-    getCachedFilePath(content_type, folder_path, id),
+    getCachedFilePath(locale, content_type, folder_path, id),
     data,
     lifetime,
   ) // write the data to the cache
@@ -81,7 +81,7 @@ export async function writeApiCache(
   data: any,
   lifetime: number = 6 * 60,
 ) {
-  writeContentCache('api', false, file_name, data, lifetime)
+  writeContentCache('default', 'api', false, file_name, data, lifetime)
 }
 
 // write data to a file
@@ -140,7 +140,7 @@ export async function flushCache(): Promise<boolean> {
     }
 
     for (const entry of fs.readdirSync(lang_path)) {
-      if (entry === 'data') {
+      if (entry === 'api') {
         continue
       }
       const entry_path = path.join(lang_path, entry)

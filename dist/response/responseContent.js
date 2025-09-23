@@ -19,12 +19,13 @@ export default function responseContent(req) {
     return __awaiter(this, void 0, void 0, function* () {
         var _a, _b;
         const { searchParams } = new URL(req.url);
+        const locale = searchParams.get('locale') || 'default';
         const content_type = (_a = searchParams.get('content_type')) !== null && _a !== void 0 ? _a : 'content';
         const folder = parseBooleanOrString(searchParams.get('folder'));
         const id = parseBooleanOrString(searchParams.get('id'));
         const ignore_stale = searchParams.get('ignore_stale') === 'true';
         try {
-            const cache_path = getCachedFilePath(content_type, folder, id);
+            const cache_path = getCachedFilePath(locale, content_type, folder, id);
             if (!fs.existsSync(cache_path)) {
                 return new Response(null, {
                     status: 404,

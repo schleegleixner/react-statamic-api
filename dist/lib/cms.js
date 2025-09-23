@@ -52,7 +52,7 @@ function fetchFromRemote() {
         const payload = yield fetchJSON(endpoint); // fetch the data from the API
         if (payload) {
             // save the data to the cache
-            yield writeContentCache(content_type, collection_id, id, payload);
+            yield writeContentCache('default', content_type, collection_id, id, payload);
             return payload;
         }
         return null;
@@ -88,7 +88,7 @@ function createPopulatedCollection() {
                 entry.entry_count = (_a = timeline.length) !== null && _a !== void 0 ? _a : 0;
             }
         })));
-        yield writeContentCache('collection', `${collection_id}.populated`, false, collection);
+        yield writeContentCache('default', 'collection', `${collection_id}.populated`, false, collection);
         return collection;
     });
 }
@@ -103,7 +103,6 @@ export function getAPI(api_1) {
         }
         // get the data from the API
         const endpoint = `${getCMSEndpoint()}${api}`;
-        console.log('Fetching API:', endpoint);
         const payload = yield fetchJSON(endpoint);
         if (payload !== null) {
             // save the data to the cache
@@ -159,6 +158,7 @@ export function rebuildCache() {
             return results;
         }
         catch (error) {
+            // eslint-disable-next-line no-console
             console.error('Rebuild cache error:', error);
             return false;
         }

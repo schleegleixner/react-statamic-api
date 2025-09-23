@@ -60,7 +60,7 @@ async function fetchFromRemote(
 
   if (payload) {
     // save the data to the cache
-    await writeContentCache(content_type, collection_id, id, payload)
+    await writeContentCache('default', content_type, collection_id, id, payload)
     return payload
   }
 
@@ -107,6 +107,7 @@ async function createPopulatedCollection(
   )
 
   await writeContentCache(
+    'default',
     'collection',
     `${collection_id}.populated`,
     false,
@@ -132,7 +133,6 @@ export async function getAPI(
 
   // get the data from the API
   const endpoint = `${getCMSEndpoint()}${api}`
-  console.log('Fetching API:', endpoint)
   const payload = await fetchJSON(endpoint)
 
   if (payload !== null) {
@@ -253,6 +253,7 @@ export async function rebuildCache() {
 
     return results
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Rebuild cache error:', error)
     return false
   }

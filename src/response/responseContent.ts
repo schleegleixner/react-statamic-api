@@ -8,17 +8,16 @@ const parseBooleanOrString = (value: string | null): boolean | string => {
   return value === 'true' ? true : value === 'false' ? false : value
 }
 
-export default async function responseFromCache(
-  req: Request,
-): Promise<Response> {
+export default async function responseContent(req: Request): Promise<Response> {
   const { searchParams } = new URL(req.url)
+  const locale = searchParams.get('locale') || 'default'
   const content_type = searchParams.get('content_type') ?? 'content'
   const folder = parseBooleanOrString(searchParams.get('folder'))
   const id = parseBooleanOrString(searchParams.get('id'))
   const ignore_stale = searchParams.get('ignore_stale') === 'true'
 
   try {
-    const cache_path = getCachedFilePath(content_type, folder, id)
+    const cache_path = getCachedFilePath(locale, content_type, folder, id)
 
     if (!fs.existsSync(cache_path)) {
       return new Response(null, {

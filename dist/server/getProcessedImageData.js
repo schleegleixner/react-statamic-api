@@ -10,7 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import { getCachePath } from '../utils/filesystem';
 import fs from 'fs';
 import path from 'path';
-export default function processedImageData(sharp_1, file_name_1, width_1) {
+export default function getProcessedImageData(sharp_1, file_name_1, width_1) {
     return __awaiter(this, arguments, void 0, function* (sharp, file_name, width, height = null, quality = 80) {
         if (typeof window !== 'undefined') {
             throw new Error('processImageData cannot be run in the browser');

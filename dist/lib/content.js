@@ -12,11 +12,12 @@ import { readCache } from '../lib/cache';
 import { fetchJSON, getCacheEndpoint } from '../utils/api';
 import { readLocalStorage, writeLocalStorage } from '../utils/localstorage';
 function handleRequest() {
-    return __awaiter(this, arguments, void 0, function* (content_type = 'content', collection_id = 'tile', id = false) {
-        const key = content_type + '.' + collection_id + '.' + id;
+    return __awaiter(this, arguments, void 0, function* (content_type = 'content', collection_id = 'tile', id = false, locale = 'default') {
+        const key = content_type + '.' + collection_id + '.' + id + '.' + locale;
         let cache_data = readLocalStorage(key);
         if (!cache_data) {
-            cache_data = (yield readCache(content_type, collection_id, id)) || null;
+            cache_data =
+                (yield readCache(content_type, collection_id, id, false, locale)) || null;
         }
         if (cache_data) {
             writeLocalStorage(key, cache_data, 15); // cache for 15 minutes
@@ -26,26 +27,26 @@ function handleRequest() {
     });
 }
 export function getContent() {
-    return __awaiter(this, arguments, void 0, function* (collection_id = 'tiles', id = false) {
+    return __awaiter(this, arguments, void 0, function* (collection_id = 'tiles', id = false, locale = 'default') {
         const singular_id = collection_id.endsWith('s')
             ? collection_id.slice(0, -1)
             : collection_id;
-        return yield handleRequest('content', singular_id, id);
+        return yield handleRequest('content', singular_id, id, locale);
     });
 }
-export function getGlobal(global_id) {
-    return __awaiter(this, void 0, void 0, function* () {
-        return handleRequest('global', global_id);
+export function getGlobal(global_id_1) {
+    return __awaiter(this, arguments, void 0, function* (global_id, locale = 'default') {
+        return handleRequest('global', global_id, false, locale);
     });
 }
-export function getTaxonomy(taxonomy_id) {
-    return __awaiter(this, void 0, void 0, function* () {
-        return handleRequest('taxonomy', taxonomy_id);
+export function getTaxonomy(taxonomy_id_1) {
+    return __awaiter(this, arguments, void 0, function* (taxonomy_id, locale = 'default') {
+        return handleRequest('taxonomy', taxonomy_id, false, locale);
     });
 }
 export function getCollection() {
-    return __awaiter(this, arguments, void 0, function* (collection_id = 'tiles') {
-        return handleRequest('collection', collection_id);
+    return __awaiter(this, arguments, void 0, function* (collection_id = 'tiles', locale = 'default') {
+        return handleRequest('collection', collection_id, false, locale);
     });
 }
 export function getPopulatedCollection() {
@@ -108,11 +109,11 @@ export function getCompleteTileset() {
         return updated_collection;
     });
 }
-export function getImageMeta(file_name) {
-    return __awaiter(this, void 0, void 0, function* () {
+export function getImageMeta(file_name_1) {
+    return __awaiter(this, arguments, void 0, function* (file_name, locale = 'default') {
         let images = readLocalStorage('collection.images');
         if (!images) {
-            images = (yield getCollection('images'));
+            images = (yield getCollection('images', locale));
             if (images) {
                 writeLocalStorage('collection.images', images, 60); // cache for 1 hour
             }

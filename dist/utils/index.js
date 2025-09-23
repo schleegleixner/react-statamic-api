@@ -1,1 +1,1 @@
-export { checkSecret } from './api';
+"use strict";

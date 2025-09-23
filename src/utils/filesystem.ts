@@ -33,14 +33,13 @@ export function getCachePath(
 }
 
 export function getCachedFilePath(
+  locale: string = 'default',
   content_type: string = 'content',
   folder: string | boolean = false,
   id: string | number | boolean,
 ) {
-  const current_language = null // TBD
-
   return getCachePath(
-    current_language,
+    locale,
     content_type,
     id ? folder : false,
     `${id || folder || 'default'}.json`,

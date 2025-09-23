@@ -2,7 +2,7 @@ import fs from 'fs'
 
 const cache_folder = 'cache'
 const default_language = 'default'
-const translated_content_types = ['collection', 'content', 'global']
+const translated_content_types = ['collection', 'content', 'global', 'taxonomy']
 
 export function getCacheRootPath() {
   return [process.cwd(), cache_folder].filter(Boolean).join('/')

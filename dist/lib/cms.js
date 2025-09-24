@@ -46,38 +46,43 @@ export function fetchFromStatamic() {
     });
 }
 function fetchFromRemote() {
-    return __awaiter(this, arguments, void 0, function* (content_type = 'content', collection_id = 'tile', id = false) {
-        // get the data from the API
-        const endpoint = `${getCMSEndpoint()}${content_type}/${collection_id}${id ? `/${id}` : ''}`;
-        const payload = yield fetchJSON(endpoint); // fetch the data from the API
-        if (payload) {
-            // save the data to the cache
-            yield writeContentCache('default', content_type, collection_id, id, payload);
-            return payload;
+    return __awaiter(this, arguments, void 0, function* (site_id = 'default', content_type = 'content', collection_id, id) {
+        const base_url = getCMSEndpoint();
+        const parts = [content_type, collection_id, id].filter(Boolean);
+        const endpoint = `${base_url}${parts.join('/')}?site_id=${site_id}`;
+        const payload = yield fetchJSON(endpoint);
+        if (!payload) {
+            return null;
         }
-        return null;
+        yield writeContentCache(site_id, content_type, collection_id !== null && collection_id !== void 0 ? collection_id : undefined, id !== null && id !== void 0 ? id : undefined, payload);
+        return payload;
     });
 }
 function fetchContent() {
-    return __awaiter(this, arguments, void 0, function* (collection_id = 'tiles', id = false) {
+    return __awaiter(this, arguments, void 0, function* (site_id = 'default', collection_id, id) {
         const singular_id = collection_id.endsWith('s')
             ? collection_id.slice(0, -1)
             : collection_id;
-        return yield fetchFromRemote('content', singular_id, id);
+        return yield fetchFromRemote(site_id, 'content', singular_id, id);
     });
 }
 function createPopulatedCollection() {
-    return __awaiter(this, arguments, void 0, function* (collection_id = 'tiles') {
-        const collection = yield getCollection(collection_id);
+    return __awaiter(this, arguments, void 0, function* (site_id = 'default', collection_id) {
+        const collection = yield getCollection(collection_id, site_id);
         yield Promise.all(collection.map((entry) => __awaiter(this, void 0, void 0, function* () {
             var _a;
+            // url rewrites (add site_id in front)
+            if (entry.url) {
+                entry.site_id = site_id;
+                entry.full_url = `/${site_id !== 'default' ? site_id : ''}${entry.url.startsWith('/') ? '' : '/'}${entry.url}`;
+            }
             // tiles
             if (entry.tile_id) {
-                entry.content = yield getContent(collection_id, entry.tile_id);
+                entry.content = yield getContent(collection_id, entry.tile_id, site_id);
             }
             // pages
             if (collection_id === 'pages') {
-                entry.content = yield getContent('pages', entry.slug);
+                entry.content = yield getContent('pages', entry.slug, site_id);
             }
             // sources
             if (entry.file_name) {
@@ -88,7 +93,7 @@ function createPopulatedCollection() {
                 entry.entry_count = (_a = timeline.length) !== null && _a !== void 0 ? _a : 0;
             }
         })));
-        yield writeContentCache('default', 'collection', `${collection_id}.populated`, false, collection);
+        yield writeContentCache(site_id, 'collection', `${collection_id}.populated`, false, collection);
         return collection;
     });
 }
@@ -130,19 +135,41 @@ function downloadFile(file_path, folder) {
 }
 export function rebuildCache() {
     return __awaiter(this, void 0, void 0, function* () {
+        const sites = (yield fetchFromRemote('default', 'sites'));
+        if (!sites) {
+            return false;
+        }
+        const results = yield Promise.all(sites.map((site) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const fetch_result = yield fetchForSite(site.handle);
+                return { site_id: site.handle, result: fetch_result };
+            }
+            catch (e) {
+                return { name: 'site::' + site.handle, success: false, error: e };
+            }
+        })));
+        return results;
+    });
+}
+function fetchForSite(site_id) {
+    return __awaiter(this, void 0, void 0, function* () {
         var _a, _b, _c, _d;
         const collections = ['pages', 'sources', 'images', 'tiles'];
         const taxonomies = ['icons', 'action_fields', 'sdg_targets'];
-        const global = ['seo', 'footer'];
+        const global = ['seo', 'footer', 'strings'];
         const data = {};
         const results = [];
         const limit = pLimit(10); // limit concurrent requests
-        const collection_results = yield Promise.all(collections.map(c => fetchFromRemote('collection', c)));
+        const collection_results = yield Promise.all(collections.map(c => fetchFromRemote(site_id, 'collection', c)));
         collections.forEach((c, i) => (data[c] = collection_results[i]));
-        try {
-            const tasks = [];
-            ((_a = data.tiles) !== null && _a !== void 0 ? _a : []).forEach((tile) => tasks.push(limit(() => fetchContent('tile', tile.tile_id).then(r => results.push({ name: 'tile::' + tile.tile_id, success: !!r })))));
-            ((_b = data.pages) !== null && _b !== void 0 ? _b : []).forEach((page) => tasks.push(limit(() => fetchContent('page', page.slug).then(r => results.push({ name: 'page::' + page.slug, success: !!r })))));
+        const tasks = [];
+        ((_a = data.tiles) !== null && _a !== void 0 ? _a : []).forEach((tile) => tasks.push(limit(() => fetchContent(site_id, 'tile', tile.tile_id).then(r => results.push({ name: 'tile::' + tile.tile_id, success: !!r })))));
+        ((_b = data.pages) !== null && _b !== void 0 ? _b : []).forEach((page) => tasks.push(limit(() => fetchContent(site_id, 'page', page.slug).then(r => results.push({ name: 'page::' + page.slug, success: !!r })))));
+        taxonomies.forEach(t => tasks.push(limit(() => fetchFromRemote(site_id, 'taxonomy', t).then(r => results.push({ name: 'taxonomy::' + t, success: !!r })))));
+        global.forEach(g => tasks.push(limit(() => fetchFromRemote(site_id, 'global', g).then(r => results.push({ name: 'global::' + g, success: !!r })))));
+        // only download images and sources for the default site
+        if (site_id === 'default') {
+            ;
             ((_c = data.images) !== null && _c !== void 0 ? _c : []).forEach((image) => tasks.push(limit(() => downloadFile(image.url, 'images').then(r => results.push({
                 name: 'image::' + image.file_name,
                 success: r !== null,
@@ -151,16 +178,11 @@ export function rebuildCache() {
                 name: 'source::' + source.file_name,
                 success: r !== null,
             })))));
-            taxonomies.forEach(t => tasks.push(limit(() => fetchFromRemote('taxonomy', t).then(r => results.push({ name: 'taxonomy::' + t, success: !!r })))));
-            global.forEach(g => tasks.push(limit(() => fetchFromRemote('global', g).then(r => results.push({ name: 'global::' + g, success: !!r })))));
-            yield Promise.all(tasks);
-            collections.forEach(c => createPopulatedCollection(c));
-            return results;
         }
-        catch (error) {
-            // eslint-disable-next-line no-console
-            console.error('Rebuild cache error:', error);
-            return false;
+        yield Promise.all(tasks);
+        for (const c of collections) {
+            yield createPopulatedCollection(site_id, c);
         }
+        return results;
     });
 }

@@ -12,12 +12,12 @@ import { readCache } from '../lib/cache';
 import { fetchJSON, getCacheEndpoint } from '../utils/api';
 import { readLocalStorage, writeLocalStorage } from '../utils/localstorage';
 function handleRequest() {
-    return __awaiter(this, arguments, void 0, function* (content_type = 'content', collection_id = 'tile', id = false, locale = 'default') {
-        const key = content_type + '.' + collection_id + '.' + id + '.' + locale;
+    return __awaiter(this, arguments, void 0, function* (site_id = 'default', content_type = 'content', collection_id = 'tile', id = false) {
+        const key = site_id + '.' + content_type + '.' + collection_id + '.' + id;
         let cache_data = readLocalStorage(key);
         if (!cache_data) {
             cache_data =
-                (yield readCache(content_type, collection_id, id, false, locale)) || null;
+                (yield readCache(site_id, content_type, collection_id, id, false)) || null;
         }
         if (cache_data) {
             writeLocalStorage(key, cache_data, 15); // cache for 15 minutes
@@ -27,31 +27,31 @@ function handleRequest() {
     });
 }
 export function getContent() {
-    return __awaiter(this, arguments, void 0, function* (collection_id = 'tiles', id = false, locale = 'default') {
+    return __awaiter(this, arguments, void 0, function* (collection_id = 'tiles', id = false, site_id) {
         const singular_id = collection_id.endsWith('s')
             ? collection_id.slice(0, -1)
             : collection_id;
-        return yield handleRequest('content', singular_id, id, locale);
+        return yield handleRequest(site_id, 'content', singular_id, id);
     });
 }
-export function getGlobal(global_id_1) {
-    return __awaiter(this, arguments, void 0, function* (global_id, locale = 'default') {
-        return handleRequest('global', global_id, false, locale);
+export function getGlobal(global_id, site_id) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return handleRequest(site_id, 'global', global_id, false);
     });
 }
-export function getTaxonomy(taxonomy_id_1) {
-    return __awaiter(this, arguments, void 0, function* (taxonomy_id, locale = 'default') {
-        return handleRequest('taxonomy', taxonomy_id, false, locale);
+export function getTaxonomy(taxonomy_id, site_id) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return handleRequest(site_id, 'taxonomy', taxonomy_id, false);
     });
 }
 export function getCollection() {
-    return __awaiter(this, arguments, void 0, function* (collection_id = 'tiles', locale = 'default') {
-        return handleRequest('collection', collection_id, false, locale);
+    return __awaiter(this, arguments, void 0, function* (collection_id = 'tiles', site_id) {
+        return handleRequest(site_id, 'collection', collection_id, false);
     });
 }
 export function getPopulatedCollection() {
-    return __awaiter(this, arguments, void 0, function* (collection_id = 'tiles', locale = 'default') {
-        const cache_data = (yield readCache('collection', `${collection_id}.populated`, false, false, locale)) || null;
+    return __awaiter(this, arguments, void 0, function* (collection_id = 'tiles', site_id) {
+        const cache_data = (yield readCache(site_id, 'collection', `${collection_id}.populated`, false, false)) || null;
         if (cache_data) {
             return cache_data; // return the cached data
         }
@@ -85,8 +85,8 @@ export function getCachedData(api) {
     });
 }
 export function getCompleteTileset() {
-    return __awaiter(this, void 0, void 0, function* () {
-        const collection = (yield getPopulatedCollection('tiles'));
+    return __awaiter(this, arguments, void 0, function* (site_id = 'default') {
+        const collection = (yield getPopulatedCollection('tiles', site_id));
         const sources = (yield getPopulatedCollection('sources'));
         if (!collection ||
             !sources ||
@@ -109,11 +109,11 @@ export function getCompleteTileset() {
         return updated_collection;
     });
 }
-export function getImageMeta(file_name_1) {
-    return __awaiter(this, arguments, void 0, function* (file_name, locale = 'default') {
+export function getImageMeta(file_name) {
+    return __awaiter(this, void 0, void 0, function* () {
         let images = readLocalStorage('collection.images');
         if (!images) {
-            images = (yield getCollection('images', locale));
+            images = (yield getCollection('images'));
             if (images) {
                 writeLocalStorage('collection.images', images, 60); // cache for 1 hour
             }

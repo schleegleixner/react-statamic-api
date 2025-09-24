@@ -9,19 +9,26 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import { checkSecret } from '../utils/api';
 import { fetchFromStatamic } from '../lib/cms';
+function withCors(body, status, extra_headers = {}) {
+    return new Response(body, {
+        status,
+        headers: Object.assign({ 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization' }, extra_headers),
+    });
+}
 export default function responseFlush(req) {
     return __awaiter(this, void 0, void 0, function* () {
         var _a;
         const { searchParams } = new URL(req.url);
         const secret = (_a = searchParams.get('secret')) !== null && _a !== void 0 ? _a : '';
         if (!checkSecret(secret)) {
-            return new Response(JSON.stringify({ message: 'Unauthorized' }), {
-                status: 401,
-            });
+            return withCors(JSON.stringify({ message: 'Unauthorized' }), 401);
         }
         const result = yield fetchFromStatamic();
-        return new Response(JSON.stringify(result), {
-            status: 200,
-        });
+        return withCors(JSON.stringify(result), 200);
+    });
+}
+export function OPTIONS() {
+    return __awaiter(this, void 0, void 0, function* () {
+        return withCors(null, 204);
     });
 }

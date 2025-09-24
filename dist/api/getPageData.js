@@ -8,9 +8,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import { getPopulatedCollection } from '../lib/content';
-export default function getPageData(id_1) {
-    return __awaiter(this, arguments, void 0, function* (id, locale = 'default', default_value = []) {
-        const collection = yield getPopulatedCollection('pages', locale);
+export default function getPageData(id, site_id) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const collection = yield getPopulatedCollection('pages', site_id);
         // find page in collection
         if (collection && collection.length > 0) {
             const page = collection.find((item) => item.slug === id);
@@ -18,6 +18,6 @@ export default function getPageData(id_1) {
                 return page;
             }
         }
-        return default_value;
+        return null;
     });
 }

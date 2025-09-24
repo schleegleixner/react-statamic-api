@@ -1,11 +1,7 @@
 import { getPopulatedCollection } from '../lib/content'
 
-export default async function getPageData(
-  id: string,
-  locale: string = 'default',
-  default_value: any = [],
-) {
-  const collection = await getPopulatedCollection('pages', locale)
+export default async function getPageData(id: string, site_id?: string) {
+  const collection = await getPopulatedCollection('pages', site_id)
 
   // find page in collection
   if (collection && collection.length > 0) {
@@ -15,5 +11,5 @@ export default async function getPageData(
     }
   }
 
-  return default_value
+  return null
 }

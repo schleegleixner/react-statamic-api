@@ -5,16 +5,16 @@ import { getCacheEndpoint } from '../utils/api'
 
 // read the data from the cache
 export async function readCache(
+  site_id: string = 'default',
   content_type: string,
   folder: string | boolean = false,
   id: string | number | boolean = false,
   ignore_stale: boolean = false,
-  locale: string = 'default',
 ) {
   try {
     const response = await fetch(
       getCacheEndpoint('cache') +
-        `?content_type=${content_type}&folder=${folder}&id=${id}&ignore_stale=${ignore_stale}&locale=${locale}`,
+        `?site_id=${site_id}&content_type=${content_type}&folder=${folder}&id=${id}&ignore_stale=${ignore_stale}`,
       { next: { tags: ['cached_data'] } },
     )
     const cache_data = await response.text()
@@ -27,13 +27,15 @@ export async function readCache(
 }
 
 export async function readApiCache(file_name: string) {
-  const result = readCache('api', false, file_name)
+  // first try to read from the api cache
+  const result = readCache('default', 'api', false, file_name)
 
   if (result) {
     return result
   }
 
-  return readCache('data', false, file_name)
+  // fallback to the alternative location
+  return readCache('default', 'data', false, file_name)
 }
 
 // write data to the cache
@@ -61,7 +63,7 @@ async function writeCache(
 
 // write content data to the cache
 export async function writeContentCache(
-  locale: string = 'default',
+  site_id: string = 'default',
   content_type: string,
   folder_path: string | boolean = false,
   id: string | number | boolean = false,
@@ -69,7 +71,7 @@ export async function writeContentCache(
   lifetime: number | boolean = false,
 ) {
   await writeCache(
-    getCachedFilePath(locale, content_type, folder_path, id),
+    getCachedFilePath(site_id, content_type, folder_path, id),
     data,
     lifetime,
   ) // write the data to the cache

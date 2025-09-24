@@ -2,6 +2,7 @@ export type PageMappingType = {
   id: string
   title: string
   slug: string
+  full_url: string
   parent: {
     id: string
     title: string
@@ -10,6 +11,7 @@ export type PageMappingType = {
   menu_position: string | null
   url: string
   content?: PageContentType
+  site_id: string
 }
 
 export type PageContentType = {

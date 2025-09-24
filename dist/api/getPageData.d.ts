@@ -1,1 +1,1 @@
-export default function getPageData(id: string, locale?: string, default_value?: any): Promise<any>;
+export default function getPageData(id: string, site_id?: string): Promise<any>;

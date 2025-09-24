@@ -6,17 +6,17 @@ import { readLocalStorage, writeLocalStorage } from '../utils/localstorage'
 import { ImageMetaInterface } from '../types/files'
 
 async function handleRequest(
+  site_id: string = 'default',
   content_type: string = 'content',
   collection_id: string = 'tile',
   id: string | number | boolean = false,
-  locale: string = 'default',
 ): Promise<any> {
-  const key = content_type + '.' + collection_id + '.' + id + '.' + locale
+  const key = site_id + '.' + content_type + '.' + collection_id + '.' + id
   let cache_data = readLocalStorage(key)
 
   if (!cache_data) {
     cache_data =
-      (await readCache(content_type, collection_id, id, false, locale)) || null
+      (await readCache(site_id, content_type, collection_id, id, false)) || null
   }
 
   if (cache_data) {
@@ -30,47 +30,47 @@ async function handleRequest(
 export async function getContent(
   collection_id: string = 'tiles',
   id: string | number | boolean = false,
-  locale: string = 'default',
+  site_id?: string,
 ): Promise<any> {
   const singular_id = collection_id.endsWith('s')
     ? collection_id.slice(0, -1)
     : collection_id
 
-  return await handleRequest('content', singular_id, id, locale)
+  return await handleRequest(site_id, 'content', singular_id, id)
 }
 
 export async function getGlobal(
   global_id: string,
-  locale: string = 'default',
+  site_id?: string,
 ): Promise<any> {
-  return handleRequest('global', global_id, false, locale)
+  return handleRequest(site_id, 'global', global_id, false)
 }
 
 export async function getTaxonomy(
   taxonomy_id: string,
-  locale: string = 'default',
+  site_id?: string,
 ): Promise<any> {
-  return handleRequest('taxonomy', taxonomy_id, false, locale)
+  return handleRequest(site_id, 'taxonomy', taxonomy_id, false)
 }
 
 export async function getCollection(
   collection_id: string = 'tiles',
-  locale: string = 'default',
+  site_id?: string,
 ): Promise<any> {
-  return handleRequest('collection', collection_id, false, locale)
+  return handleRequest(site_id, 'collection', collection_id, false)
 }
 
 export async function getPopulatedCollection(
   collection_id: string = 'tiles',
-  locale: string = 'default',
+  site_id?: string,
 ): Promise<any> {
   const cache_data =
     (await readCache(
+      site_id,
       'collection',
       `${collection_id}.populated`,
       false,
       false,
-      locale,
     )) || null
   if (cache_data) {
     return cache_data // return the cached data
@@ -109,8 +109,13 @@ export async function getCachedData(api: string): Promise<any> {
   }
 }
 
-export async function getCompleteTileset(): Promise<TileDataType[]> {
-  const collection = (await getPopulatedCollection('tiles')) as TileDataType[]
+export async function getCompleteTileset(
+  site_id: string = 'default',
+): Promise<TileDataType[]> {
+  const collection = (await getPopulatedCollection(
+    'tiles',
+    site_id,
+  )) as TileDataType[]
   const sources = (await getPopulatedCollection(
     'sources',
   )) as TileDatasourceType[]
@@ -154,11 +159,10 @@ export async function getCompleteTileset(): Promise<TileDataType[]> {
 
 export async function getImageMeta(
   file_name: string,
-  locale: string = 'default',
 ): Promise<ImageMetaInterface | false> {
   let images = readLocalStorage('collection.images') as ImageMetaInterface[]
   if (!images) {
-    images = (await getCollection('images', locale)) as ImageMetaInterface[]
+    images = (await getCollection('images')) as ImageMetaInterface[]
     if (images) {
       writeLocalStorage('collection.images', images, 60) // cache for 1 hour
     }

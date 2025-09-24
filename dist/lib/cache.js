@@ -12,12 +12,12 @@ import path from 'path';
 import { getCachedFilePath, getCacheRootPath } from '../utils/filesystem';
 import { getCacheEndpoint } from '../utils/api';
 // read the data from the cache
-export function readCache(content_type_1) {
-    return __awaiter(this, arguments, void 0, function* (content_type, folder = false, id = false, ignore_stale = false, locale = 'default') {
+export function readCache() {
+    return __awaiter(this, arguments, void 0, function* (site_id = 'default', content_type, folder = false, id = false, ignore_stale = false) {
         var _a;
         try {
             const response = yield fetch(getCacheEndpoint('cache') +
-                `?content_type=${content_type}&folder=${folder}&id=${id}&ignore_stale=${ignore_stale}&locale=${locale}`, { next: { tags: ['cached_data'] } });
+                `?site_id=${site_id}&content_type=${content_type}&folder=${folder}&id=${id}&ignore_stale=${ignore_stale}`, { next: { tags: ['cached_data'] } });
             const cache_data = yield response.text();
             const json_data = JSON.parse(cache_data);
             return (_a = json_data.payload) !== null && _a !== void 0 ? _a : json_data;
@@ -29,11 +29,13 @@ export function readCache(content_type_1) {
 }
 export function readApiCache(file_name) {
     return __awaiter(this, void 0, void 0, function* () {
-        const result = readCache('api', false, file_name);
+        // first try to read from the api cache
+        const result = readCache('default', 'api', false, file_name);
         if (result) {
             return result;
         }
-        return readCache('data', false, file_name);
+        // fallback to the alternative location
+        return readCache('default', 'data', false, file_name);
     });
 }
 // write data to the cache
@@ -51,8 +53,8 @@ function writeCache(file_path_1, data_1) {
 }
 // write content data to the cache
 export function writeContentCache() {
-    return __awaiter(this, arguments, void 0, function* (locale = 'default', content_type, folder_path = false, id = false, data, lifetime = false) {
-        yield writeCache(getCachedFilePath(locale, content_type, folder_path, id), data, lifetime); // write the data to the cache
+    return __awaiter(this, arguments, void 0, function* (site_id = 'default', content_type, folder_path = false, id = false, data, lifetime = false) {
+        yield writeCache(getCachedFilePath(site_id, content_type, folder_path, id), data, lifetime); // write the data to the cache
     });
 }
 // write API data to the cache

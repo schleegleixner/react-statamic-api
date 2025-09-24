@@ -48,51 +48,65 @@ export async function fetchFromStatamic(): Promise<ResultType> {
 }
 
 async function fetchFromRemote(
+  site_id: string = 'default',
   content_type: string = 'content',
-  collection_id: string = 'tile',
-  id: string | number | boolean = false,
-): Promise<any> {
-  // get the data from the API
-  const endpoint = `${getCMSEndpoint()}${content_type}/${collection_id}${
-    id ? `/${id}` : ''
-  }`
-  const payload = await fetchJSON(endpoint) // fetch the data from the API
+  collection_id?: string,
+  id?: string | number,
+): Promise<unknown | null> {
+  const base_url = getCMSEndpoint()
+  const parts = [content_type, collection_id, id].filter(Boolean)
+  const endpoint = `${base_url}${parts.join('/')}?site_id=${site_id}`
 
-  if (payload) {
-    // save the data to the cache
-    await writeContentCache('default', content_type, collection_id, id, payload)
-    return payload
+  const payload = await fetchJSON(endpoint)
+  if (!payload) {
+    return null
   }
 
-  return null
+  await writeContentCache(
+    site_id,
+    content_type,
+    collection_id ?? undefined,
+    id ?? undefined,
+    payload,
+  )
+
+  return payload
 }
 
 async function fetchContent(
-  collection_id: string = 'tiles',
-  id: string | number | boolean = false,
+  site_id: string = 'default',
+  collection_id: string,
+  id?: string | number,
 ): Promise<any> {
   const singular_id = collection_id.endsWith('s')
     ? collection_id.slice(0, -1)
     : collection_id
 
-  return await fetchFromRemote('content', singular_id, id)
+  return await fetchFromRemote(site_id, 'content', singular_id, id)
 }
 
 async function createPopulatedCollection(
-  collection_id: string = 'tiles',
+  site_id: string = 'default',
+  collection_id: string,
 ): Promise<any> {
-  const collection = await getCollection(collection_id)
+  const collection = await getCollection(collection_id, site_id)
 
   await Promise.all(
     collection.map(async (entry: any) => {
+      // url rewrites (add site_id in front)
+      if (entry.url) {
+        entry.site_id = site_id
+        entry.full_url = `/${site_id !== 'default' ? site_id : ''}${entry.url.startsWith('/') ? '' : '/'}${entry.url}`
+      }
+
       // tiles
       if (entry.tile_id) {
-        entry.content = await getContent(collection_id, entry.tile_id)
+        entry.content = await getContent(collection_id, entry.tile_id, site_id)
       }
 
       // pages
       if (collection_id === 'pages') {
-        entry.content = await getContent('pages', entry.slug)
+        entry.content = await getContent('pages', entry.slug, site_id)
       }
 
       // sources
@@ -107,7 +121,7 @@ async function createPopulatedCollection(
   )
 
   await writeContentCache(
-    'default',
+    site_id,
     'collection',
     `${collection_id}.populated`,
     false,
@@ -166,41 +180,90 @@ type RebuildResult = {
   success: boolean
 }
 
+type SiteType = {
+  handle: string
+  name: string
+  locale: string
+  url: string
+}
+
 export async function rebuildCache() {
+  const sites = (await fetchFromRemote('default', 'sites')) as SiteType[]
+  if (!sites) {
+    return false
+  }
+
+  const results = await Promise.all(
+    sites.map(async site => {
+      try {
+        const fetch_result = await fetchForSite(site.handle)
+        return { site_id: site.handle, result: fetch_result }
+      } catch (e) {
+        return { name: 'site::' + site.handle, success: false, error: e }
+      }
+    }),
+  )
+
+  return results
+}
+
+async function fetchForSite(site_id: string) {
   const collections = ['pages', 'sources', 'images', 'tiles']
   const taxonomies = ['icons', 'action_fields', 'sdg_targets']
-  const global = ['seo', 'footer']
+  const global = ['seo', 'footer', 'strings']
   const data: any = {}
   const results: RebuildResult[] = []
 
   const limit = pLimit(10) // limit concurrent requests
 
   const collection_results = await Promise.all(
-    collections.map(c => fetchFromRemote('collection', c)),
+    collections.map(c => fetchFromRemote(site_id, 'collection', c)),
   )
   collections.forEach((c, i) => (data[c] = collection_results[i]))
 
-  try {
-    const tasks: Promise<any>[] = []
+  const tasks: Promise<any>[] = []
 
-    ;(data.tiles ?? []).forEach((tile: { tile_id: string }) =>
-      tasks.push(
-        limit(() =>
-          fetchContent('tile', tile.tile_id).then(r =>
-            results.push({ name: 'tile::' + tile.tile_id, success: !!r }),
-          ),
+  ;(data.tiles ?? []).forEach((tile: { tile_id: string }) =>
+    tasks.push(
+      limit(() =>
+        fetchContent(site_id, 'tile', tile.tile_id).then(r =>
+          results.push({ name: 'tile::' + tile.tile_id, success: !!r }),
         ),
       ),
-    )
-    ;(data.pages ?? []).forEach((page: { slug: string }) =>
-      tasks.push(
-        limit(() =>
-          fetchContent('page', page.slug).then(r =>
-            results.push({ name: 'page::' + page.slug, success: !!r }),
-          ),
+    ),
+  )
+  ;(data.pages ?? []).forEach((page: { slug: string }) =>
+    tasks.push(
+      limit(() =>
+        fetchContent(site_id, 'page', page.slug).then(r =>
+          results.push({ name: 'page::' + page.slug, success: !!r }),
         ),
       ),
-    )
+    ),
+  )
+
+  taxonomies.forEach(t =>
+    tasks.push(
+      limit(() =>
+        fetchFromRemote(site_id, 'taxonomy', t).then(r =>
+          results.push({ name: 'taxonomy::' + t, success: !!r }),
+        ),
+      ),
+    ),
+  )
+
+  global.forEach(g =>
+    tasks.push(
+      limit(() =>
+        fetchFromRemote(site_id, 'global', g).then(r =>
+          results.push({ name: 'global::' + g, success: !!r }),
+        ),
+      ),
+    ),
+  )
+
+  // only download images and sources for the default site
+  if (site_id === 'default') {
     ;(data.images ?? []).forEach((image: { url: string; file_name: string }) =>
       tasks.push(
         limit(() =>
@@ -226,35 +289,13 @@ export async function rebuildCache() {
           ),
         ),
     )
-
-    taxonomies.forEach(t =>
-      tasks.push(
-        limit(() =>
-          fetchFromRemote('taxonomy', t).then(r =>
-            results.push({ name: 'taxonomy::' + t, success: !!r }),
-          ),
-        ),
-      ),
-    )
-
-    global.forEach(g =>
-      tasks.push(
-        limit(() =>
-          fetchFromRemote('global', g).then(r =>
-            results.push({ name: 'global::' + g, success: !!r }),
-          ),
-        ),
-      ),
-    )
-
-    await Promise.all(tasks)
-
-    collections.forEach(c => createPopulatedCollection(c))
-
-    return results
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('Rebuild cache error:', error)
-    return false
   }
+
+  await Promise.all(tasks)
+
+  for (const c of collections) {
+    await createPopulatedCollection(site_id, c)
+  }
+
+  return results
 }

@@ -8,9 +8,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import { getCachedData } from '../lib/content';
-export default function getTileData(id_1) {
-    return __awaiter(this, arguments, void 0, function* (id, attribute = false, locale = 'default', default_value = []) {
-        const data = yield getCachedData(`content?collection=tile&id=${id}&locale=${locale}`);
+export default function getTileData() {
+    return __awaiter(this, arguments, void 0, function* (site_id = 'default', id, attribute = false, default_value = []) {
+        const data = yield getCachedData(`content?collection=tile&id=${id}&site_id=${site_id}`);
         if (attribute !== false) {
             return data && data[attribute] ? data[attribute] : default_value;
         }

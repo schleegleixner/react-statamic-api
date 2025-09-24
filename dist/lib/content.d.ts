@@ -1,10 +1,10 @@
 import { TileDataType } from '../types/tiles';
 import { ImageMetaInterface } from '../types/files';
-export declare function getContent(collection_id?: string, id?: string | number | boolean, locale?: string): Promise<any>;
-export declare function getGlobal(global_id: string, locale?: string): Promise<any>;
-export declare function getTaxonomy(taxonomy_id: string, locale?: string): Promise<any>;
-export declare function getCollection(collection_id?: string, locale?: string): Promise<any>;
-export declare function getPopulatedCollection(collection_id?: string, locale?: string): Promise<any>;
+export declare function getContent(collection_id?: string, id?: string | number | boolean, site_id?: string): Promise<any>;
+export declare function getGlobal(global_id: string, site_id?: string): Promise<any>;
+export declare function getTaxonomy(taxonomy_id: string, site_id?: string): Promise<any>;
+export declare function getCollection(collection_id?: string, site_id?: string): Promise<any>;
+export declare function getPopulatedCollection(collection_id?: string, site_id?: string): Promise<any>;
 export declare function getCachedData(api: string): Promise<any>;
-export declare function getCompleteTileset(): Promise<TileDataType[]>;
-export declare function getImageMeta(file_name: string, locale?: string): Promise<ImageMetaInterface | false>;
+export declare function getCompleteTileset(site_id?: string): Promise<TileDataType[]>;
+export declare function getImageMeta(file_name: string): Promise<ImageMetaInterface | false>;

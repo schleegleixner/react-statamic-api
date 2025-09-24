@@ -1,18 +1,18 @@
 import fs from 'fs';
 const cache_folder = 'cache';
-const default_language = 'default';
+const default_site_id = 'default';
 const translated_content_types = ['collection', 'content', 'global', 'taxonomy'];
 export function getCacheRootPath() {
     return [process.cwd(), cache_folder].filter(Boolean).join('/');
 }
-export function getCachePath(language = null, content_type = 'content', folder = false, filename = false) {
-    // if the content type is not translated, use the default language
+export function getCachePath(site_id = null, content_type = 'content', folder = false, filename = false) {
+    // if the content type is not translated, use the default site_id
     if (content_type && !translated_content_types.includes(content_type)) {
-        language = null;
+        site_id = null;
     }
     const path = [
         getCacheRootPath(),
-        language !== null && language !== void 0 ? language : default_language,
+        site_id !== null && site_id !== void 0 ? site_id : default_site_id,
         content_type,
         folder,
         filename,
@@ -21,8 +21,8 @@ export function getCachePath(language = null, content_type = 'content', folder =
         .join('/');
     return path;
 }
-export function getCachedFilePath(locale = 'default', content_type = 'content', folder = false, id) {
-    return getCachePath(locale, content_type, id ? folder : false, `${id || folder || 'default'}.json`);
+export function getCachedFilePath(site_id = 'default', content_type = 'content', folder = false, id) {
+    return getCachePath(site_id, content_type, id ? folder : false, `${id || folder || 'default'}.json`);
 }
 export function findDataFile(filename = false) {
     const folders = ['data', 'source'];

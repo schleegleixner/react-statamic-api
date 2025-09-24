@@ -5,5 +5,17 @@ type RebuildResult = {
     name: string;
     success: boolean;
 };
-export declare function rebuildCache(): Promise<false | RebuildResult[]>;
+export declare function rebuildCache(): Promise<false | ({
+    site_id: string;
+    result: RebuildResult[];
+    name?: undefined;
+    success?: undefined;
+    error?: undefined;
+} | {
+    name: string;
+    success: boolean;
+    error: unknown;
+    site_id?: undefined;
+    result?: undefined;
+})[]>;
 export {};

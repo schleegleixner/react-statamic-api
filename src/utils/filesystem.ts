@@ -1,7 +1,7 @@
 import fs from 'fs'
 
 const cache_folder = 'cache'
-const default_language = 'default'
+const default_site_id = 'default'
 const translated_content_types = ['collection', 'content', 'global', 'taxonomy']
 
 export function getCacheRootPath() {
@@ -9,19 +9,19 @@ export function getCacheRootPath() {
 }
 
 export function getCachePath(
-  language: string | boolean | null = null,
+  site_id: string | boolean | null = null,
   content_type: string = 'content',
   folder: string | boolean = false,
   filename: string | boolean = false,
 ) {
-  // if the content type is not translated, use the default language
+  // if the content type is not translated, use the default site_id
   if (content_type && !translated_content_types.includes(content_type)) {
-    language = null
+    site_id = null
   }
 
   const path = [
     getCacheRootPath(),
-    language ?? default_language,
+    site_id ?? default_site_id,
     content_type,
     folder,
     filename,
@@ -33,13 +33,13 @@ export function getCachePath(
 }
 
 export function getCachedFilePath(
-  locale: string = 'default',
+  site_id: string = 'default',
   content_type: string = 'content',
   folder: string | boolean = false,
   id: string | number | boolean,
 ) {
   return getCachePath(
-    locale,
+    site_id,
     content_type,
     id ? folder : false,
     `${id || folder || 'default'}.json`,

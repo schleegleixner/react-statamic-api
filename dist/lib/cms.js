@@ -74,7 +74,8 @@ function createPopulatedCollection() {
             // url rewrites (add site_id in front)
             if (entry.url) {
                 entry.site_id = site_id;
-                entry.full_url = `/${site_id !== 'default' ? site_id : ''}${entry.url.startsWith('/') ? '' : '/'}${entry.url}`;
+                entry.full_url =
+                    `/${site_id !== 'default' ? site_id : ''}/${entry.url}`.replace(/\/+/g, '/');
             }
             // tiles
             if (entry.tile_id) {
@@ -133,9 +134,11 @@ function downloadFile(file_path, folder) {
         yield writeBuffer(getCachePath(null, folder, file_name), content);
     });
 }
+// rebuild the cache for all sites
 export function rebuildCache() {
     return __awaiter(this, void 0, void 0, function* () {
         const sites = (yield fetchFromRemote('default', 'sites'));
+        // if no sites are defined, use a default site
         if (!sites) {
             return false;
         }
@@ -151,6 +154,7 @@ export function rebuildCache() {
         return results;
     });
 }
+// fetch all data for a specific site
 function fetchForSite(site_id) {
     return __awaiter(this, void 0, void 0, function* () {
         var _a, _b, _c, _d;

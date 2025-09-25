@@ -10,7 +10,12 @@ import { getCachePath } from '../utils/filesystem'
 import getDataFile from '../api/getDataFile'
 import { getTimeline } from '../utils/sources'
 import { getCollection, getContent } from '../lib/content'
-import { ResultType, StepResultType } from '../types/cms'
+import {
+  RebuildResult,
+  ResultType,
+  SiteType,
+  StepResultType,
+} from '../types/cms'
 import { flushCache, revalidateContent } from './cache'
 import pLimit from 'p-limit'
 
@@ -96,7 +101,11 @@ async function createPopulatedCollection(
       // url rewrites (add site_id in front)
       if (entry.url) {
         entry.site_id = site_id
-        entry.full_url = `/${site_id !== 'default' ? site_id : ''}${entry.url.startsWith('/') ? '' : '/'}${entry.url}`
+        entry.full_url =
+          `/${site_id !== 'default' ? site_id : ''}/${entry.url}`.replace(
+            /\/+/g,
+            '/',
+          )
       }
 
       // tiles
@@ -175,20 +184,11 @@ async function downloadFile(file_path: string, folder: string): Promise<any> {
   await writeBuffer(getCachePath(null, folder, file_name), content)
 }
 
-type RebuildResult = {
-  name: string
-  success: boolean
-}
-
-type SiteType = {
-  handle: string
-  name: string
-  locale: string
-  url: string
-}
-
+// rebuild the cache for all sites
 export async function rebuildCache() {
   const sites = (await fetchFromRemote('default', 'sites')) as SiteType[]
+
+  // if no sites are defined, use a default site
   if (!sites) {
     return false
   }
@@ -207,6 +207,7 @@ export async function rebuildCache() {
   return results
 }
 
+// fetch all data for a specific site
 async function fetchForSite(site_id: string) {
   const collections = ['pages', 'sources', 'images', 'tiles']
   const taxonomies = ['icons', 'action_fields', 'sdg_targets']

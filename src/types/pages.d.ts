@@ -7,6 +7,7 @@ export type PageMappingType = {
     id: string
     title: string
     url: string
+    full_url: string
   } | null
   menu_position: string | null
   url: string
@@ -30,5 +31,10 @@ export type PageContentType = {
     action_dimension: string | null
     action_field: string | null
     sdg_target: string | null
+  }
+  seo: {
+    title: string | null
+    description: string | null
+    keywords: string | null
   }
 }

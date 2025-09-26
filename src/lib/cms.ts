@@ -106,6 +106,13 @@ async function createPopulatedCollection(
             /\/+/g,
             '/',
           )
+        if (entry.parent) {
+          entry.parent.full_url =
+            `/${site_id !== 'default' ? site_id : ''}/${entry.parent.url}`.replace(
+              /\/+/g,
+              '/',
+            )
+        }
       }
 
       // tiles

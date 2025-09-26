@@ -76,6 +76,10 @@ function createPopulatedCollection() {
                 entry.site_id = site_id;
                 entry.full_url =
                     `/${site_id !== 'default' ? site_id : ''}/${entry.url}`.replace(/\/+/g, '/');
+                if (entry.parent) {
+                    entry.parent.full_url =
+                        `/${site_id !== 'default' ? site_id : ''}/${entry.parent.url}`.replace(/\/+/g, '/');
+                }
             }
             // tiles
             if (entry.tile_id) {

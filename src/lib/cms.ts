@@ -206,6 +206,8 @@ export async function rebuildCache() {
         const fetch_result = await fetchForSite(site.handle)
         return { site_id: site.handle, result: fetch_result }
       } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error(`❌ Error fetching site: ${site.handle}`, e)
         return { name: 'site::' + site.handle, success: false, error: e }
       }
     }),
@@ -229,10 +231,11 @@ async function fetchForSite(site_id: string) {
   )
   collections.forEach((c, i) => (data[c] = collection_results[i]))
 
-  const tasks: Promise<any>[] = []
+  const tasks_content: Promise<any>[] = []
+  const tasks_files: Promise<any>[] = []
 
   ;(data.tiles ?? []).forEach((tile: { tile_id: string }) =>
-    tasks.push(
+    tasks_content.push(
       limit(() =>
         fetchContent(site_id, 'tile', tile.tile_id).then(r =>
           results.push({ name: 'tile::' + tile.tile_id, success: !!r }),
@@ -241,7 +244,7 @@ async function fetchForSite(site_id: string) {
     ),
   )
   ;(data.pages ?? []).forEach((page: { slug: string }) =>
-    tasks.push(
+    tasks_content.push(
       limit(() =>
         fetchContent(site_id, 'page', page.slug).then(r =>
           results.push({ name: 'page::' + page.slug, success: !!r }),
@@ -251,7 +254,7 @@ async function fetchForSite(site_id: string) {
   )
 
   taxonomies.forEach(t =>
-    tasks.push(
+    tasks_content.push(
       limit(() =>
         fetchFromRemote(site_id, 'taxonomy', t).then(r =>
           results.push({ name: 'taxonomy::' + t, success: !!r }),
@@ -261,7 +264,7 @@ async function fetchForSite(site_id: string) {
   )
 
   global.forEach(g =>
-    tasks.push(
+    tasks_content.push(
       limit(() =>
         fetchFromRemote(site_id, 'global', g).then(r =>
           results.push({ name: 'global::' + g, success: !!r }),
@@ -273,7 +276,7 @@ async function fetchForSite(site_id: string) {
   // only download images and sources for the default site
   if (site_id === 'default') {
     ;(data.images ?? []).forEach((image: { url: string; file_name: string }) =>
-      tasks.push(
+      tasks_files.push(
         limit(() =>
           downloadFile(image.url, 'images').then(r =>
             results.push({
@@ -286,7 +289,7 @@ async function fetchForSite(site_id: string) {
     )
     ;(data.sources ?? []).forEach(
       (source: { url: string; file_name: string }) =>
-        tasks.push(
+        tasks_files.push(
           limit(() =>
             downloadFile(source.url, 'source').then(r =>
               results.push({
@@ -299,7 +302,17 @@ async function fetchForSite(site_id: string) {
     )
   }
 
-  await Promise.all(tasks)
+  // eslint-disable-next-line no-console
+  console.log(
+    `ℹ️ Fetching content for site: ${site_id}, tasks: ${tasks_content.length}`,
+  )
+  await Promise.all(tasks_content)
+
+  // eslint-disable-next-line no-console
+  console.log(
+    `ℹ️ Fetching files for site: ${site_id}, tasks: ${tasks_files.length}`,
+  )
+  await Promise.all(tasks_files)
 
   // eslint-disable-next-line no-console
   console.log(`ℹ️ Fetched ${results.length} items for site: ${site_id}`)

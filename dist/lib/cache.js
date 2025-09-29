@@ -134,7 +134,8 @@ export function flushCache() {
 export function revalidateContent() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const response = yield fetch(getCacheEndpoint('revalidate'), {
+            const endpoint = getCacheEndpoint('revalidate');
+            const response = yield fetch(endpoint, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -143,7 +144,7 @@ export function revalidateContent() {
             if (!response.ok) {
                 return {
                     success: false,
-                    error: `Failed to revalidate. Status: ${response.status}`,
+                    error: `Failed to revalidate cache. Endpoint: ${endpoint} answered with status: ${response.status}`,
                 };
             }
             return { success: true };

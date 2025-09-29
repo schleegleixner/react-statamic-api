@@ -152,6 +152,8 @@ export function rebuildCache() {
                 return { site_id: site.handle, result: fetch_result };
             }
             catch (e) {
+                // eslint-disable-next-line no-console
+                console.error(`❌ Error fetching site: ${site.handle}`, e);
                 return { name: 'site::' + site.handle, success: false, error: e };
             }
         })));
@@ -170,25 +172,35 @@ function fetchForSite(site_id) {
         const limit = pLimit(10); // limit concurrent requests
         const collection_results = yield Promise.all(collections.map(c => fetchFromRemote(site_id, 'collection', c)));
         collections.forEach((c, i) => (data[c] = collection_results[i]));
-        const tasks = [];
-        ((_a = data.tiles) !== null && _a !== void 0 ? _a : []).forEach((tile) => tasks.push(limit(() => fetchContent(site_id, 'tile', tile.tile_id).then(r => results.push({ name: 'tile::' + tile.tile_id, success: !!r })))));
-        ((_b = data.pages) !== null && _b !== void 0 ? _b : []).forEach((page) => tasks.push(limit(() => fetchContent(site_id, 'page', page.slug).then(r => results.push({ name: 'page::' + page.slug, success: !!r })))));
-        taxonomies.forEach(t => tasks.push(limit(() => fetchFromRemote(site_id, 'taxonomy', t).then(r => results.push({ name: 'taxonomy::' + t, success: !!r })))));
-        global.forEach(g => tasks.push(limit(() => fetchFromRemote(site_id, 'global', g).then(r => results.push({ name: 'global::' + g, success: !!r })))));
+        const tasks_content = [];
+        const tasks_files = [];
+        ((_a = data.tiles) !== null && _a !== void 0 ? _a : []).forEach((tile) => tasks_content.push(limit(() => fetchContent(site_id, 'tile', tile.tile_id).then(r => results.push({ name: 'tile::' + tile.tile_id, success: !!r })))));
+        ((_b = data.pages) !== null && _b !== void 0 ? _b : []).forEach((page) => tasks_content.push(limit(() => fetchContent(site_id, 'page', page.slug).then(r => results.push({ name: 'page::' + page.slug, success: !!r })))));
+        taxonomies.forEach(t => tasks_content.push(limit(() => fetchFromRemote(site_id, 'taxonomy', t).then(r => results.push({ name: 'taxonomy::' + t, success: !!r })))));
+        global.forEach(g => tasks_content.push(limit(() => fetchFromRemote(site_id, 'global', g).then(r => results.push({ name: 'global::' + g, success: !!r })))));
         // only download images and sources for the default site
         if (site_id === 'default') {
             ;
-            ((_c = data.images) !== null && _c !== void 0 ? _c : []).forEach((image) => tasks.push(limit(() => downloadFile(image.url, 'images').then(r => results.push({
+            ((_c = data.images) !== null && _c !== void 0 ? _c : []).forEach((image) => tasks_files.push(limit(() => downloadFile(image.url, 'images').then(r => results.push({
                 name: 'image::' + image.file_name,
                 success: r !== null,
             })))));
-            ((_d = data.sources) !== null && _d !== void 0 ? _d : []).forEach((source) => tasks.push(limit(() => downloadFile(source.url, 'source').then(r => results.push({
+            ((_d = data.sources) !== null && _d !== void 0 ? _d : []).forEach((source) => tasks_files.push(limit(() => downloadFile(source.url, 'source').then(r => results.push({
                 name: 'source::' + source.file_name,
                 success: r !== null,
             })))));
         }
-        yield Promise.all(tasks);
+        // eslint-disable-next-line no-console
+        console.log(`ℹ️ Fetching content for site: ${site_id}, tasks: ${tasks_content.length}`);
+        yield Promise.all(tasks_content);
+        // eslint-disable-next-line no-console
+        console.log(`ℹ️ Fetching files for site: ${site_id}, tasks: ${tasks_files.length}`);
+        yield Promise.all(tasks_files);
+        // eslint-disable-next-line no-console
+        console.log(`ℹ️ Fetched ${results.length} items for site: ${site_id}`);
         for (const c of collections) {
+            // eslint-disable-next-line no-console
+            console.log(`ℹ️ Creating populated collection: ${c} (${site_id})`);
             yield createPopulatedCollection(site_id, c);
         }
         return results;

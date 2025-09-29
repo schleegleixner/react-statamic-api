@@ -92,7 +92,7 @@ export function writeBuffer(file_path, buffer) {
             yield fs.promises.mkdir(path.dirname(file_path), { recursive: true });
             yield fs.promises.writeFile(file_path, buffer);
             // eslint-disable-next-line no-console
-            console.log('💾 Buffer saved:', file_path.split('/sdd-marburg-app/')[1]);
+            console.log('💾 Buffer saved:', file_path.split('/cache/')[1]);
             return true;
         }
         catch (error) {

@@ -119,7 +119,7 @@ export async function writeBuffer(
     await fs.promises.mkdir(path.dirname(file_path), { recursive: true })
     await fs.promises.writeFile(file_path, buffer as any)
     // eslint-disable-next-line no-console
-    console.log('💾 Buffer saved:', file_path.split('/sdd-marburg-app/')[1])
+    console.log('💾 Buffer saved:', file_path.split('/cache/')[1])
     return true
   } catch (error) {
     // eslint-disable-next-line no-console

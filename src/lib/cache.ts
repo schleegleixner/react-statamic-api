@@ -18,6 +18,12 @@ export async function readCache(
   try {
     const response = await fetch(endpoint, { next: { tags: ['cached_data'] } })
     const cache_data = await response.text()
+
+    await writeCache(
+      getCachedFilePath('default', 'logs', content_type, folder + '.log'),
+      cache_data,
+    )
+
     const json_data = JSON.parse(cache_data)
 
     return json_data.payload ?? json_data
@@ -26,7 +32,7 @@ export async function readCache(
     console.error(`🚫 Error reading cache at endpoint: ${endpoint}`, error)
     // write a log entry about the error
     await writeCache(
-      getCachedFilePath('default', 'cache', 'logs', id + '.log'),
+      getCachedFilePath('default', 'logs', content_type, 'error.log'),
       {
         message: `Error reading cache at endpoint: ${endpoint}`,
         error: error instanceof Error ? error.message : String(error),

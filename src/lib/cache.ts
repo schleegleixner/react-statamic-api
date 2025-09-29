@@ -21,7 +21,9 @@ export async function readCache(
     const json_data = JSON.parse(cache_data)
 
     return json_data.payload ?? json_data
-  } catch {
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('🚫 Error reading cache:', error)
     return null
   }
 }

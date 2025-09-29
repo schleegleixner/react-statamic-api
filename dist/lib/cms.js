@@ -69,6 +69,11 @@ function fetchContent() {
 function createPopulatedCollection() {
     return __awaiter(this, arguments, void 0, function* (site_id = 'default', collection_id) {
         const collection = yield getCollection(collection_id, site_id);
+        if (!collection) {
+            // eslint-disable-next-line no-console
+            console.warn(`⚠️ Collection not found: ${collection_id} (${site_id})`, collection);
+            return null;
+        }
         yield Promise.all(collection.map((entry) => __awaiter(this, void 0, void 0, function* () {
             var _a;
             // url rewrites (add site_id in front)

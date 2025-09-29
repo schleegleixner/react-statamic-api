@@ -22,7 +22,9 @@ export function readCache() {
             const json_data = JSON.parse(cache_data);
             return (_a = json_data.payload) !== null && _a !== void 0 ? _a : json_data;
         }
-        catch (_b) {
+        catch (error) {
+            // eslint-disable-next-line no-console
+            console.error('🚫 Error reading cache:', error);
             return null;
         }
     });

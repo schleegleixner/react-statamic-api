@@ -96,6 +96,15 @@ async function createPopulatedCollection(
 ): Promise<any> {
   const collection = await getCollection(collection_id, site_id)
 
+  if (!collection) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `⚠️ Collection not found: ${collection_id} (${site_id})`,
+      collection,
+    )
+    return null
+  }
+
   await Promise.all(
     collection.map(async (entry: any) => {
       // url rewrites (add site_id in front)

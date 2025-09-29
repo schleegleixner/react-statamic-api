@@ -24,6 +24,14 @@ export async function readCache(
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error(`🚫 Error reading cache at endpoint: ${endpoint}`, error)
+    // write a log entry about the error
+    await writeCache(
+      getCachedFilePath('default', 'cache', 'logs', id + '.log'),
+      {
+        message: `Error reading cache at endpoint: ${endpoint}`,
+        error: error instanceof Error ? error.message : String(error),
+      },
+    )
     return null
   }
 }

@@ -17,13 +17,15 @@ export async function readCache(
 
   try {
     const response = await fetch(endpoint, { next: { tags: ['cached_data'] } })
+
+    if (response.status !== 200) {
+      // eslint-disable-next-line no-console
+      console.error(
+        `🚫 Cache read error at endpoint: ${endpoint} - Status: ${response.status}`,
+      )
+    }
+
     const cache_data = await response.text()
-
-    await writeCache(
-      getCachedFilePath('default', 'logs', content_type, folder + '.log'),
-      cache_data,
-    )
-
     const json_data = JSON.parse(cache_data)
 
     return json_data.payload ?? json_data
@@ -32,7 +34,7 @@ export async function readCache(
     console.error(`🚫 Error reading cache at endpoint: ${endpoint}`, error)
     // write a log entry about the error
     await writeCache(
-      getCachedFilePath('default', 'logs', content_type, 'error.log'),
+      getCachedFilePath('logs', content_type, folder, 'error.log'),
       {
         message: `Error reading cache at endpoint: ${endpoint}`,
         error: error instanceof Error ? error.message : String(error),

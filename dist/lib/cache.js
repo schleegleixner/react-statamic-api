@@ -19,8 +19,11 @@ export function readCache() {
             `?site_id=${site_id}&content_type=${content_type}&folder=${folder}&id=${id}&ignore_stale=${ignore_stale}`;
         try {
             const response = yield fetch(endpoint, { next: { tags: ['cached_data'] } });
+            if (response.status !== 200) {
+                // eslint-disable-next-line no-console
+                console.error(`🚫 Cache read error at endpoint: ${endpoint} - Status: ${response.status}`);
+            }
             const cache_data = yield response.text();
-            yield writeCache(getCachedFilePath('default', 'logs', content_type, folder + '.log'), cache_data);
             const json_data = JSON.parse(cache_data);
             return (_a = json_data.payload) !== null && _a !== void 0 ? _a : json_data;
         }
@@ -28,7 +31,7 @@ export function readCache() {
             // eslint-disable-next-line no-console
             console.error(`🚫 Error reading cache at endpoint: ${endpoint}`, error);
             // write a log entry about the error
-            yield writeCache(getCachedFilePath('default', 'logs', content_type, 'error.log'), {
+            yield writeCache(getCachedFilePath('logs', content_type, folder, 'error.log'), {
                 message: `Error reading cache at endpoint: ${endpoint}`,
                 error: error instanceof Error ? error.message : String(error),
             });

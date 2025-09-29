@@ -15,16 +15,17 @@ import { getCacheEndpoint } from '../utils/api';
 export function readCache() {
     return __awaiter(this, arguments, void 0, function* (site_id = 'default', content_type, folder = false, id = false, ignore_stale = false) {
         var _a;
+        const endpoint = getCacheEndpoint('cache') +
+            `?site_id=${site_id}&content_type=${content_type}&folder=${folder}&id=${id}&ignore_stale=${ignore_stale}`;
         try {
-            const response = yield fetch(getCacheEndpoint('cache') +
-                `?site_id=${site_id}&content_type=${content_type}&folder=${folder}&id=${id}&ignore_stale=${ignore_stale}`, { next: { tags: ['cached_data'] } });
+            const response = yield fetch(endpoint, { next: { tags: ['cached_data'] } });
             const cache_data = yield response.text();
             const json_data = JSON.parse(cache_data);
             return (_a = json_data.payload) !== null && _a !== void 0 ? _a : json_data;
         }
         catch (error) {
             // eslint-disable-next-line no-console
-            console.error('🚫 Error reading cache:', error);
+            console.error(`🚫 Error reading cache at endpoint: ${endpoint}`, error);
             return null;
         }
     });

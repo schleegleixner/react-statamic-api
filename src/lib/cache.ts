@@ -11,19 +11,19 @@ export async function readCache(
   id: string | number | boolean = false,
   ignore_stale: boolean = false,
 ) {
+  const endpoint =
+    getCacheEndpoint('cache') +
+    `?site_id=${site_id}&content_type=${content_type}&folder=${folder}&id=${id}&ignore_stale=${ignore_stale}`
+
   try {
-    const response = await fetch(
-      getCacheEndpoint('cache') +
-        `?site_id=${site_id}&content_type=${content_type}&folder=${folder}&id=${id}&ignore_stale=${ignore_stale}`,
-      { next: { tags: ['cached_data'] } },
-    )
+    const response = await fetch(endpoint, { next: { tags: ['cached_data'] } })
     const cache_data = await response.text()
     const json_data = JSON.parse(cache_data)
 
     return json_data.payload ?? json_data
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error('🚫 Error reading cache:', error)
+    console.error(`🚫 Error reading cache at endpoint: ${endpoint}`, error)
     return null
   }
 }

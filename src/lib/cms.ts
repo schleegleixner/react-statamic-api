@@ -301,7 +301,12 @@ async function fetchForSite(site_id: string) {
 
   await Promise.all(tasks)
 
+  // eslint-disable-next-line no-console
+  console.log(`ℹ️ Fetched ${results.length} items for site: ${site_id}`)
+
   for (const c of collections) {
+    // eslint-disable-next-line no-console
+    console.log(`ℹ️ Creating populated collection: ${c} (${site_id})`)
     await createPopulatedCollection(site_id, c)
   }
 

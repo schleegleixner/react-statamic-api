@@ -163,7 +163,8 @@ export async function revalidateContent(): Promise<{
   error?: string
 }> {
   try {
-    const response = await fetch(getCacheEndpoint('revalidate'), {
+    const endpoint = getCacheEndpoint('revalidate')
+    const response = await fetch(endpoint, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -173,7 +174,7 @@ export async function revalidateContent(): Promise<{
     if (!response.ok) {
       return {
         success: false,
-        error: `Failed to revalidate. Status: ${response.status}`,
+        error: `Failed to revalidate cache. Endpoint: ${endpoint} answered with status: ${response.status}`,
       }
     }
 

@@ -110,11 +110,14 @@ async function createPopulatedCollection(
       // url rewrites (add site_id in front)
       if (entry.url) {
         entry.site_id = site_id
-        entry.full_url =
-          `/${site_id !== 'default' ? site_id : ''}/${entry.url}`.replace(
-            /\/+/g,
-            '/',
-          )
+        // only apply if not starting with http
+        if (!entry.url.startsWith('http')) {
+          entry.full_url =
+            `/${site_id !== 'default' ? site_id : ''}/${entry.url}`.replace(
+              /\/+/g,
+              '/',
+            )
+        }
         if (entry.parent) {
           entry.parent.full_url =
             `/${site_id !== 'default' ? site_id : ''}/${entry.parent.url}`.replace(
@@ -131,6 +134,7 @@ async function createPopulatedCollection(
 
       // pages
       if (collection_id === 'pages') {
+        console.log('Fetching page content for', entry.slug)
         entry.content = await getContent('pages', entry.slug, site_id)
       }
 

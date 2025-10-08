@@ -1,4 +1,5 @@
 export {
+  InputDataType,
   TableRowType,
   TileDatasourceType,
   TileDataType,

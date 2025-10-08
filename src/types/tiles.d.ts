@@ -1,6 +1,6 @@
 export type InputDataType = {
   INDEX: number
-  [key: string]: number | undefined
+  [key: string]: number | undefined | null
 }
 
 export type TileTypePrefix = string
@@ -25,6 +25,7 @@ export type TableRowType = {
   icon?: string | null
   decimals?: number | null
   divider?: boolean | null
+  hide_trend?: boolean | null
 }
 
 export type TileDatasourceType = {

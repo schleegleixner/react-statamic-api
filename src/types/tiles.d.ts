@@ -63,6 +63,8 @@ export interface TilePayloadType {
   table_keys: string[] | null
   icon: string | null
   datasources: TileDatasourceType[] | null
+  hightlight: boolean | null
+  diagram_type: string | null
 }
 
 export interface TileProps {

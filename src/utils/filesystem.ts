@@ -19,6 +19,10 @@ export function getCachePath(
     site_id = null
   }*/
 
+  if (site_id === false) {
+    site_id = null
+  }
+
   const path = [
     getCacheRootPath(),
     site_id ?? default_site_id,

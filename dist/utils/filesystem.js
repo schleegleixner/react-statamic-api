@@ -10,6 +10,9 @@ export function getCachePath(site_id = null, content_type = 'content', folder = 
     /*if (content_type && !translated_content_types.includes(content_type)) {
       site_id = null
     }*/
+    if (site_id === false) {
+        site_id = null;
+    }
     const path = [
         getCacheRootPath(),
         site_id !== null && site_id !== void 0 ? site_id : default_site_id,

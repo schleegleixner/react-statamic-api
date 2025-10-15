@@ -10,23 +10,18 @@ import { getCachePath } from '../utils/filesystem'
 import getDataFile from '../api/getDataFile'
 import { getTimeline } from '../utils/sources'
 import { getCollection, getContent } from '../lib/content'
-import {
-  RebuildResult,
-  ResultType,
-  SiteType,
-  StepResultType,
-} from '../types/cms'
+import { RebuildResult, ResultType, StepResultType } from '../types/cms'
 import { flushCache, revalidateContent } from './cache'
 import pLimit from 'p-limit'
 
-export async function fetchFromStatamic(): Promise<ResultType> {
+export async function fetchFromStatamic(sites: string[]): Promise<ResultType> {
   const results: StepResultType[] = []
 
-  const flushResult = await flushCache()
+  const flushResult = await flushCache(sites)
 
   results.push({ name: 'flush', success: flushResult === true })
 
-  const rebuildResult = await rebuildCache()
+  const rebuildResult = await rebuildCache(sites)
   results.push({
     name: 'rebuild',
     success: rebuildResult !== false,
@@ -134,7 +129,7 @@ async function createPopulatedCollection(
 
       // pages
       if (collection_id === 'pages') {
-        console.log('Fetching page content for', entry.slug)
+        console.log('📄 Fetching page content for', entry.slug)
         entry.content = await getContent('pages', entry.slug, site_id)
       }
 
@@ -187,7 +182,11 @@ export async function getAPI(
   return null
 }
 
-async function downloadFile(file_path: string, folder: string): Promise<any> {
+async function downloadFile(
+  site_id: string,
+  file_path: string,
+  folder: string,
+): Promise<any> {
   // if endpoint has no http(s):// prefix, prepend the CMS endpoint
   const endpoint = file_path.startsWith('http')
     ? file_path
@@ -201,27 +200,25 @@ async function downloadFile(file_path: string, folder: string): Promise<any> {
     return false
   }
 
-  await writeBuffer(getCachePath(null, folder, file_name), content)
+  await writeBuffer(getCachePath(site_id, folder, file_name), content)
 }
 
 // rebuild the cache for all sites
-export async function rebuildCache() {
-  const sites = (await fetchFromRemote('default', 'sites')) as SiteType[]
-
+export async function rebuildCache(sites: string[]) {
   // if no sites are defined, use a default site
-  if (!sites) {
+  if (!sites || sites.length === 0) {
     return false
   }
 
   const results = await Promise.all(
     sites.map(async site => {
       try {
-        const fetch_result = await fetchForSite(site.handle)
-        return { site_id: site.handle, result: fetch_result }
+        const fetch_result = await fetchForSite(site)
+        return { site_id: site, result: fetch_result }
       } catch (e) {
         // eslint-disable-next-line no-console
-        console.error(`❌ Error fetching site: ${site.handle}`, e)
-        return { name: 'site::' + site.handle, success: false, error: e }
+        console.error(`❌ Error fetching site: ${site}`, e)
+        return { name: 'site::' + site, success: false, error: e }
       }
     }),
   )
@@ -287,33 +284,30 @@ async function fetchForSite(site_id: string) {
   )
 
   // only download images and sources for the default site
-  if (site_id === 'default') {
-    ;(data.images ?? []).forEach((image: { url: string; file_name: string }) =>
-      tasks_files.push(
-        limit(() =>
-          downloadFile(image.url, 'images').then(r =>
-            results.push({
-              name: 'image::' + image.file_name,
-              success: r !== null,
-            }),
-          ),
+  ;(data.images ?? []).forEach((image: { url: string; file_name: string }) =>
+    tasks_files.push(
+      limit(() =>
+        downloadFile(site_id, image.url, 'images').then(r =>
+          results.push({
+            name: 'image::' + image.file_name,
+            success: r !== null,
+          }),
         ),
       ),
-    )
-    ;(data.sources ?? []).forEach(
-      (source: { url: string; file_name: string }) =>
-        tasks_files.push(
-          limit(() =>
-            downloadFile(source.url, 'source').then(r =>
-              results.push({
-                name: 'source::' + source.file_name,
-                success: r !== null,
-              }),
-            ),
-          ),
+    ),
+  )
+  ;(data.sources ?? []).forEach((source: { url: string; file_name: string }) =>
+    tasks_files.push(
+      limit(() =>
+        downloadFile(site_id, source.url, 'source').then(r =>
+          results.push({
+            name: 'source::' + source.file_name,
+            success: r !== null,
+          }),
         ),
-    )
-  }
+      ),
+    ),
+  )
 
   // eslint-disable-next-line no-console
   console.log(

@@ -16,10 +16,3 @@ export type RebuildResult = {
   name: string
   success: boolean
 }
-
-export type SiteType = {
-  handle: string
-  name: string
-  locale: string
-  url: string
-}

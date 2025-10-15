@@ -16,12 +16,12 @@ import { getTimeline } from '../utils/sources';
 import { getCollection, getContent } from '../lib/content';
 import { flushCache, revalidateContent } from './cache';
 import pLimit from 'p-limit';
-export function fetchFromStatamic() {
+export function fetchFromStatamic(sites) {
     return __awaiter(this, void 0, void 0, function* () {
         const results = [];
-        const flushResult = yield flushCache();
+        const flushResult = yield flushCache(sites);
         results.push({ name: 'flush', success: flushResult === true });
-        const rebuildResult = yield rebuildCache();
+        const rebuildResult = yield rebuildCache(sites);
         results.push({
             name: 'rebuild',
             success: rebuildResult !== false,
@@ -95,7 +95,7 @@ function createPopulatedCollection() {
             }
             // pages
             if (collection_id === 'pages') {
-                console.log('Fetching page content for', entry.slug);
+                console.log('📄 Fetching page content for', entry.slug);
                 entry.content = yield getContent('pages', entry.slug, site_id);
             }
             // sources
@@ -131,7 +131,7 @@ export function getAPI(api_1) {
         return null;
     });
 }
-function downloadFile(file_path, folder) {
+function downloadFile(site_id, file_path, folder) {
     return __awaiter(this, void 0, void 0, function* () {
         // if endpoint has no http(s):// prefix, prepend the CMS endpoint
         const endpoint = file_path.startsWith('http')
@@ -144,26 +144,25 @@ function downloadFile(file_path, folder) {
         if (!content) {
             return false;
         }
-        yield writeBuffer(getCachePath(null, folder, file_name), content);
+        yield writeBuffer(getCachePath(site_id, folder, file_name), content);
     });
 }
 // rebuild the cache for all sites
-export function rebuildCache() {
+export function rebuildCache(sites) {
     return __awaiter(this, void 0, void 0, function* () {
-        const sites = (yield fetchFromRemote('default', 'sites'));
         // if no sites are defined, use a default site
-        if (!sites) {
+        if (!sites || sites.length === 0) {
             return false;
         }
         const results = yield Promise.all(sites.map((site) => __awaiter(this, void 0, void 0, function* () {
             try {
-                const fetch_result = yield fetchForSite(site.handle);
-                return { site_id: site.handle, result: fetch_result };
+                const fetch_result = yield fetchForSite(site);
+                return { site_id: site, result: fetch_result };
             }
             catch (e) {
                 // eslint-disable-next-line no-console
-                console.error(`❌ Error fetching site: ${site.handle}`, e);
-                return { name: 'site::' + site.handle, success: false, error: e };
+                console.error(`❌ Error fetching site: ${site}`, e);
+                return { name: 'site::' + site, success: false, error: e };
             }
         })));
         return results;
@@ -187,18 +186,14 @@ function fetchForSite(site_id) {
         ((_b = data.pages) !== null && _b !== void 0 ? _b : []).forEach((page) => tasks_content.push(limit(() => fetchContent(site_id, 'page', page.slug).then(r => results.push({ name: 'page::' + page.slug, success: !!r })))));
         taxonomies.forEach(t => tasks_content.push(limit(() => fetchFromRemote(site_id, 'taxonomy', t).then(r => results.push({ name: 'taxonomy::' + t, success: !!r })))));
         global.forEach(g => tasks_content.push(limit(() => fetchFromRemote(site_id, 'global', g).then(r => results.push({ name: 'global::' + g, success: !!r })))));
-        // only download images and sources for the default site
-        if (site_id === 'default') {
-            ;
-            ((_c = data.images) !== null && _c !== void 0 ? _c : []).forEach((image) => tasks_files.push(limit(() => downloadFile(image.url, 'images').then(r => results.push({
-                name: 'image::' + image.file_name,
-                success: r !== null,
-            })))));
-            ((_d = data.sources) !== null && _d !== void 0 ? _d : []).forEach((source) => tasks_files.push(limit(() => downloadFile(source.url, 'source').then(r => results.push({
-                name: 'source::' + source.file_name,
-                success: r !== null,
-            })))));
-        }
+        ((_c = data.images) !== null && _c !== void 0 ? _c : []).forEach((image) => tasks_files.push(limit(() => downloadFile(site_id, image.url, 'images').then(r => results.push({
+            name: 'image::' + image.file_name,
+            success: r !== null,
+        })))));
+        ((_d = data.sources) !== null && _d !== void 0 ? _d : []).forEach((source) => tasks_files.push(limit(() => downloadFile(site_id, source.url, 'source').then(r => results.push({
+            name: 'source::' + source.file_name,
+            success: r !== null,
+        })))));
         // eslint-disable-next-line no-console
         console.log(`ℹ️ Fetching content for site: ${site_id}, tasks: ${tasks_content.length}`);
         yield Promise.all(tasks_content);

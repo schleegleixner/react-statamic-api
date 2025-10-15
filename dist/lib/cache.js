@@ -115,13 +115,16 @@ export function writeBuffer(file_path, buffer) {
     });
 }
 // clear the content cache
-export function flushCache() {
+export function flushCache(sites) {
     return __awaiter(this, void 0, void 0, function* () {
         const cache_root_path = getCacheRootPath();
         if (!fs.existsSync(cache_root_path)) {
             return true;
         }
-        for (const lang_dir of fs.readdirSync(cache_root_path)) {
+        if (!sites || sites.length === 0) {
+            sites = fs.readdirSync(cache_root_path);
+        }
+        for (const lang_dir of sites) {
             const lang_path = path.join(cache_root_path, lang_dir);
             if (!fs.statSync(lang_path).isDirectory()) {
                 continue;

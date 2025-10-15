@@ -21,12 +21,21 @@ function withCors(
 export default async function responseFlush(req: Request): Promise<Response> {
   const { searchParams } = new URL(req.url)
   const secret = searchParams.get('secret') ?? ''
+  let sites: string[] = []
+
+  // try to get sites from query params
+  try {
+    const body = await req.json()
+    sites = body.sites ?? []
+  } catch {
+    sites = process.env.SITE_IDS?.split(',') ?? ['default']
+  }
 
   if (!checkSecret(secret)) {
     return withCors(JSON.stringify({ message: 'Unauthorized' }), 401)
   }
 
-  const result = await fetchFromStatamic()
+  const result = await fetchFromStatamic(sites)
   return withCors(JSON.stringify(result), 200)
 }
 

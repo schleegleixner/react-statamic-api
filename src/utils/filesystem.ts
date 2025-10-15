@@ -2,7 +2,7 @@ import fs from 'fs'
 
 const cache_folder = 'cache'
 const default_site_id = 'default'
-const translated_content_types = ['collection', 'content', 'global', 'taxonomy']
+// const translated_content_types = ['collection', 'content', 'global', 'taxonomy']
 
 export function getCacheRootPath() {
   return [process.cwd(), cache_folder].filter(Boolean).join('/')
@@ -15,9 +15,9 @@ export function getCachePath(
   filename: string | boolean = false,
 ) {
   // if the content type is not translated, use the default site_id
-  if (content_type && !translated_content_types.includes(content_type)) {
+  /*if (content_type && !translated_content_types.includes(content_type)) {
     site_id = null
-  }
+  }*/
 
   const path = [
     getCacheRootPath(),

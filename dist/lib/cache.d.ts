@@ -4,7 +4,7 @@ export declare function writeContentCache(site_id: string | undefined, content_t
 export declare function writeApiCache(file_name: string, data: any, lifetime?: number): Promise<void>;
 export declare function writeFile(file_path: string, data: any): Promise<boolean>;
 export declare function writeBuffer(file_path: string, buffer: Buffer): Promise<boolean>;
-export declare function flushCache(): Promise<boolean>;
+export declare function flushCache(sites?: string[]): Promise<boolean>;
 export declare function revalidateContent(): Promise<{
     success: boolean;
     error?: string;

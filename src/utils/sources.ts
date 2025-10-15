@@ -1,7 +1,7 @@
-import { InputDataType } from '../types/tiles'
+import { PayloadDataType } from '../utils/import'
 
 export function getTimeline(
-  data: InputDataType[],
+  data: PayloadDataType[],
   key: string = 'INDEX',
 ): number[] {
   if (!data || data.length === 0) {

@@ -1,6 +1,5 @@
 export type InputDataType = {
-  INDEX: number
-  [key: string]: number | undefined | null
+  [key: string]: number | null
 }
 
 export type TileTypePrefix = string

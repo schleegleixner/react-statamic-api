@@ -1,2 +1,2 @@
-import { InputDataType } from '../types/tiles';
-export declare function getTimeline(data: InputDataType[], key?: string): number[];
+import { PayloadDataType } from '../utils/import';
+export declare function getTimeline(data: PayloadDataType[], key?: string): number[];

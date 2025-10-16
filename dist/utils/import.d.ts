@@ -4,5 +4,5 @@ export type PayloadDataType = {
 export declare function readCSV(file_path: string): PayloadDataType[];
 export declare function readJSON(file_path: string): PayloadDataType[];
 export declare function readExcel(file_path: string): Promise<PayloadDataType[]>;
-export declare function filterValidEntries(data: PayloadDataType[]): PayloadDataType[];
 export declare function normalizeHeaders(data: PayloadDataType[]): PayloadDataType[];
+export declare function filterValidEntries(data: PayloadDataType[]): PayloadDataType[];

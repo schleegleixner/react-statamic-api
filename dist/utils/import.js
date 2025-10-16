@@ -21,6 +21,7 @@ export function readCSV(file_path) {
     const cleaned_data = file_data
         .split('\n')
         .filter(line => !line.trim().startsWith('#'))
+        .filter(line => !line.trim().startsWith('"'))
         .filter(line => line.trim() !== '' &&
         line.replace(new RegExp(delimiter, 'g'), '').trim() !== '')
         .join('\n');
@@ -60,15 +61,32 @@ export function readExcel(file_path) {
         return rows;
     });
 }
+export function normalizeHeaders(data) {
+    return data.map(entry => {
+        const normalizedEntry = {};
+        Object.keys(entry).forEach(key => {
+            // normalize timescale keys
+            const normalizedKey = key.toUpperCase() === 'ZEIT' || key.toUpperCase() === 'JAHR'
+                ? 'INDEX'
+                : key;
+            normalizedEntry[normalizedKey] = entry[key];
+            // remove leading and trailing whitespace from keys
+            const trimmedKey = normalizedKey.trim();
+            normalizedEntry[trimmedKey] = entry[key];
+        });
+        return normalizedEntry;
+    });
+}
 export function filterValidEntries(data) {
     if (!data.length) {
         return [];
     }
-    const firstColumnKey = Object.keys(data[0])[0];
-    if (!firstColumnKey) {
+    const first_column_key = Object.keys(data[0])[0];
+    if (!first_column_key) {
         return [];
     }
-    return data.map(entry => {
+    return data
+        .map(entry => {
         // create a new object with filtered keys
         const filtered_entry = {};
         for (const [key, value] of Object.entries(entry)) {
@@ -93,21 +111,12 @@ export function filterValidEntries(data) {
             }
         }
         return filtered_entry;
-    });
-}
-export function normalizeHeaders(data) {
-    return data.map(entry => {
-        const normalizedEntry = {};
-        Object.keys(entry).forEach(key => {
-            // normalize timescale keys
-            const normalizedKey = key.toUpperCase() === 'ZEIT' || key.toUpperCase() === 'JAHR'
-                ? 'INDEX'
-                : key;
-            normalizedEntry[normalizedKey] = entry[key];
-            // remove leading and trailing whitespace from keys
-            const trimmedKey = normalizedKey.trim();
-            normalizedEntry[trimmedKey] = entry[key];
+    })
+        .filter(entry => {
+        const valid_first_key = entry[first_column_key] !== null && entry[first_column_key] !== '';
+        const has_valid_data = Object.entries(entry).some(([key, value]) => {
+            return key !== first_column_key && value !== null;
         });
-        return normalizedEntry;
+        return first_column_key !== 'INDEX' || (valid_first_key && has_valid_data);
     });
 }

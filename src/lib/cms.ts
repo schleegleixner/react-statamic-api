@@ -6,20 +6,22 @@ import {
 } from '../lib/cache'
 import { fetchFile, fetchJSON, getCMSEndpoint } from '../utils/api'
 import path from 'path'
-import { getCachePath } from '../utils/filesystem'
+import {
+  ensureCacheFolder,
+  moveTemporaryFolder,
+  getCachePath,
+} from '../utils/filesystem'
 import getDataFile from '../api/getDataFile'
 import { getTimeline } from '../utils/sources'
 import { getCollection, getContent } from '../lib/content'
 import { RebuildResult, ResultType, StepResultType } from '../types/cms'
-import { flushCache, revalidateContent } from './cache'
+import { revalidateContent } from './cache'
 import pLimit from 'p-limit'
+
+const temporary_folder = 'temp'
 
 export async function fetchFromStatamic(sites: string[]): Promise<ResultType> {
   const results: StepResultType[] = []
-
-  const flushResult = await flushCache(sites)
-
-  results.push({ name: 'flush', success: flushResult === true })
 
   const rebuildResult = await rebuildCache(sites)
   results.push({
@@ -27,6 +29,14 @@ export async function fetchFromStatamic(sites: string[]): Promise<ResultType> {
     success: rebuildResult !== false,
     payload: rebuildResult,
   })
+
+  if (rebuildResult === false) {
+    return {
+      message: 'Failed to rebuild cache. Aborting...',
+      results,
+      success: false,
+    }
+  }
 
   const revalidationResult = await revalidateContent()
   if (!revalidationResult.success) {
@@ -63,7 +73,7 @@ async function fetchFromRemote(
   }
 
   await writeContentCache(
-    site_id,
+    temporary_folder,
     content_type,
     collection_id ?? undefined,
     id ?? undefined,
@@ -145,7 +155,7 @@ async function createPopulatedCollection(
   )
 
   await writeContentCache(
-    site_id,
+    temporary_folder,
     'collection',
     `${collection_id}.populated`,
     false,
@@ -200,7 +210,7 @@ async function downloadFile(
     return false
   }
 
-  await writeBuffer(getCachePath(site_id, folder, file_name), content)
+  await writeBuffer(getCachePath(temporary_folder, folder, file_name), content)
 }
 
 // rebuild the cache for all sites
@@ -213,7 +223,11 @@ export async function rebuildCache(sites: string[]) {
   const results = await Promise.all(
     sites.map(async site => {
       try {
+        ensureCacheFolder(temporary_folder)
         const fetch_result = await fetchForSite(site)
+        if (fetch_result) {
+          moveTemporaryFolder(temporary_folder, site)
+        }
         return { site_id: site, result: fetch_result }
       } catch (e) {
         // eslint-disable-next-line no-console
@@ -228,9 +242,15 @@ export async function rebuildCache(sites: string[]) {
 
 // fetch all data for a specific site
 async function fetchForSite(site_id: string) {
-  const collections = ['pages', 'sources', 'images', 'tiles']
-  const taxonomies = ['icons', 'action_fields', 'sdg_targets']
-  const global = ['seo', 'footer', 'strings']
+  const collections = process.env.SET_COLLECTIONS
+    ? process.env.SET_COLLECTIONS.split(',')
+    : ['pages', 'sources', 'images', 'tiles']
+  const taxonomies = process.env.SET_TAXONOMIES
+    ? process.env.SET_TAXONOMIES.split(',')
+    : ['icons', 'action_fields', 'sdg_targets']
+  const global = process.env.SET_GLOBAL
+    ? process.env.SET_GLOBAL.split(',')
+    : ['seo', 'footer', 'strings']
   const data: any = {}
   const results: RebuildResult[] = []
 

@@ -1,6 +1,6 @@
 import * as fs from 'fs'
 import path from 'path'
-import { getCachedFilePath, getCacheRootPath } from '../utils/filesystem'
+import { getCachedFilePath } from '../utils/filesystem'
 import { getCacheEndpoint } from '../utils/api'
 
 // read the data from the cache
@@ -46,14 +46,14 @@ export async function readCache(
 
 export async function readApiCache(file_name: string) {
   // first try to read from the api cache
-  const result = readCache('default', 'api', false, file_name)
+  const result = readCache('global', 'api', false, file_name)
 
   if (result) {
     return result
   }
 
   // fallback to the alternative location
-  return readCache('default', 'data', false, file_name)
+  return readCache('global', 'data', false, file_name)
 }
 
 // write data to the cache
@@ -100,8 +100,9 @@ export async function writeApiCache(
   file_name: string,
   data: any,
   lifetime: number = 6 * 60,
+  folder: string = 'api',
 ) {
-  writeContentCache('default', 'api', false, file_name, data, lifetime)
+  writeContentCache('global', folder, false, file_name, data, lifetime)
 }
 
 // write data to a file
@@ -144,40 +145,6 @@ export async function writeBuffer(
     console.error('🧨 Error writing buffer:', error)
     return false
   }
-}
-
-// clear the content cache
-export async function flushCache(sites?: string[]): Promise<boolean> {
-  const cache_root_path = getCacheRootPath()
-  if (!fs.existsSync(cache_root_path)) {
-    return true
-  }
-
-  if (!sites || sites.length === 0) {
-    sites = fs.readdirSync(cache_root_path)
-  }
-
-  for (const lang_dir of sites) {
-    const lang_path = path.join(cache_root_path, lang_dir)
-    if (!fs.statSync(lang_path).isDirectory()) {
-      continue
-    }
-
-    for (const entry of fs.readdirSync(lang_path)) {
-      if (entry === 'api') {
-        continue
-      }
-      const entry_path = path.join(lang_path, entry)
-      if (fs.statSync(entry_path).isDirectory()) {
-        fs.rmSync(entry_path, { recursive: true })
-        fs.mkdirSync(entry_path)
-      } else {
-        fs.rmSync(entry_path)
-      }
-    }
-  }
-
-  return true
 }
 
 export async function revalidateContent(): Promise<{

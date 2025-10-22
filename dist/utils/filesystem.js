@@ -1,21 +1,55 @@
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 import fs from 'fs';
 const cache_folder = 'cache';
 const default_site_id = 'default';
-// const translated_content_types = ['collection', 'content', 'global', 'taxonomy']
-export function getCacheRootPath() {
-    return [process.cwd(), cache_folder].filter(Boolean).join('/');
+export function getCacheRootPath(site_id) {
+    return [process.cwd(), cache_folder, site_id].filter(Boolean).join('/');
+}
+export function ensureCacheFolder(site_id = 'default') {
+    const cache_path = getCacheRootPath(site_id);
+    if (!fs.existsSync(cache_path)) {
+        fs.mkdirSync(cache_path, { recursive: true });
+    }
+    return cache_path;
+}
+export function moveTemporaryFolder(temporary_folder, site_id) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const temp_path = getCacheRootPath(temporary_folder);
+        const site_path = getCacheRootPath(site_id);
+        try {
+            // remove existing site folder
+            if (fs.existsSync(site_path)) {
+                fs.rmSync(site_path, { recursive: true, force: true });
+            }
+            // create new destination folder
+            fs.mkdirSync(site_path, { recursive: true });
+            // copy everything from temp → site
+            fs.cpSync(temp_path, site_path, { recursive: true, force: true });
+            // nuke the temporary folder
+            fs.rmSync(temp_path, { recursive: true, force: true });
+            console.log(`💀 Moved and overwrote cache folder for site '${site_id}'`);
+            return true;
+        }
+        catch (error) {
+            console.error(`☠️  Failed to move folder '${temporary_folder}' → '${site_id}':`, error);
+            return false;
+        }
+    });
 }
 export function getCachePath(site_id = null, content_type = 'content', folder = false, filename = false) {
-    // if the content type is not translated, use the default site_id
-    /*if (content_type && !translated_content_types.includes(content_type)) {
-      site_id = null
-    }*/
     if (site_id === false) {
         site_id = null;
     }
     const path = [
-        getCacheRootPath(),
-        site_id !== null && site_id !== void 0 ? site_id : default_site_id,
+        getCacheRootPath(site_id !== null && site_id !== void 0 ? site_id : default_site_id),
         content_type,
         folder,
         filename,

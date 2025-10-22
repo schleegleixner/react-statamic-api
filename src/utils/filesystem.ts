@@ -2,10 +2,53 @@ import fs from 'fs'
 
 const cache_folder = 'cache'
 const default_site_id = 'default'
-// const translated_content_types = ['collection', 'content', 'global', 'taxonomy']
 
-export function getCacheRootPath() {
-  return [process.cwd(), cache_folder].filter(Boolean).join('/')
+export function getCacheRootPath(site_id?: string | boolean | undefined) {
+  return [process.cwd(), cache_folder, site_id].filter(Boolean).join('/')
+}
+
+export function ensureCacheFolder(site_id: string = 'default') {
+  const cache_path = getCacheRootPath(site_id)
+
+  if (!fs.existsSync(cache_path)) {
+    fs.mkdirSync(cache_path, { recursive: true })
+  }
+
+  return cache_path
+}
+
+export async function moveTemporaryFolder(
+  temporary_folder: string,
+  site_id: string,
+): Promise<boolean> {
+  const temp_path = getCacheRootPath(temporary_folder)
+  const site_path = getCacheRootPath(site_id)
+
+  try {
+    // remove existing site folder
+    if (fs.existsSync(site_path)) {
+      fs.rmSync(site_path, { recursive: true, force: true })
+    }
+
+    // create new destination folder
+    fs.mkdirSync(site_path, { recursive: true })
+
+    // copy everything from temp → site
+    fs.cpSync(temp_path, site_path, { recursive: true, force: true })
+
+    // nuke the temporary folder
+    fs.rmSync(temp_path, { recursive: true, force: true })
+
+    console.log(`💀 Moved and overwrote cache folder for site '${site_id}'`)
+
+    return true
+  } catch (error) {
+    console.error(
+      `☠️  Failed to move folder '${temporary_folder}' → '${site_id}':`,
+      error,
+    )
+    return false
+  }
 }
 
 export function getCachePath(
@@ -14,18 +57,12 @@ export function getCachePath(
   folder: string | boolean = false,
   filename: string | boolean = false,
 ) {
-  // if the content type is not translated, use the default site_id
-  /*if (content_type && !translated_content_types.includes(content_type)) {
-    site_id = null
-  }*/
-
   if (site_id === false) {
     site_id = null
   }
 
   const path = [
-    getCacheRootPath(),
-    site_id ?? default_site_id,
+    getCacheRootPath(site_id ?? default_site_id),
     content_type,
     folder,
     filename,

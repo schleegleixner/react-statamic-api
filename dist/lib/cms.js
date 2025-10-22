@@ -10,23 +10,29 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import { readApiCache, writeApiCache, writeBuffer, writeContentCache, } from '../lib/cache';
 import { fetchFile, fetchJSON, getCMSEndpoint } from '../utils/api';
 import path from 'path';
-import { getCachePath } from '../utils/filesystem';
+import { ensureCacheFolder, moveTemporaryFolder, getCachePath, } from '../utils/filesystem';
 import getDataFile from '../api/getDataFile';
 import { getTimeline } from '../utils/sources';
 import { getCollection, getContent } from '../lib/content';
-import { flushCache, revalidateContent } from './cache';
+import { revalidateContent } from './cache';
 import pLimit from 'p-limit';
+const temporary_folder = 'temp';
 export function fetchFromStatamic(sites) {
     return __awaiter(this, void 0, void 0, function* () {
         const results = [];
-        const flushResult = yield flushCache(sites);
-        results.push({ name: 'flush', success: flushResult === true });
         const rebuildResult = yield rebuildCache(sites);
         results.push({
             name: 'rebuild',
             success: rebuildResult !== false,
             payload: rebuildResult,
         });
+        if (rebuildResult === false) {
+            return {
+                message: 'Failed to rebuild cache. Aborting...',
+                results,
+                success: false,
+            };
+        }
         const revalidationResult = yield revalidateContent();
         if (!revalidationResult.success) {
             results.push({
@@ -54,7 +60,7 @@ function fetchFromRemote() {
         if (!payload) {
             return null;
         }
-        yield writeContentCache(site_id, content_type, collection_id !== null && collection_id !== void 0 ? collection_id : undefined, id !== null && id !== void 0 ? id : undefined, payload);
+        yield writeContentCache(temporary_folder, content_type, collection_id !== null && collection_id !== void 0 ? collection_id : undefined, id !== null && id !== void 0 ? id : undefined, payload);
         return payload;
     });
 }
@@ -107,7 +113,7 @@ function createPopulatedCollection() {
                 entry.entry_count = (_a = timeline.length) !== null && _a !== void 0 ? _a : 0;
             }
         })));
-        yield writeContentCache(site_id, 'collection', `${collection_id}.populated`, false, collection);
+        yield writeContentCache(temporary_folder, 'collection', `${collection_id}.populated`, false, collection);
         return collection;
     });
 }
@@ -144,7 +150,7 @@ function downloadFile(site_id, file_path, folder) {
         if (!content) {
             return false;
         }
-        yield writeBuffer(getCachePath(site_id, folder, file_name), content);
+        yield writeBuffer(getCachePath(temporary_folder, folder, file_name), content);
     });
 }
 // rebuild the cache for all sites
@@ -156,7 +162,11 @@ export function rebuildCache(sites) {
         }
         const results = yield Promise.all(sites.map((site) => __awaiter(this, void 0, void 0, function* () {
             try {
+                ensureCacheFolder(temporary_folder);
                 const fetch_result = yield fetchForSite(site);
+                if (fetch_result) {
+                    moveTemporaryFolder(temporary_folder, site);
+                }
                 return { site_id: site, result: fetch_result };
             }
             catch (e) {
@@ -172,9 +182,15 @@ export function rebuildCache(sites) {
 function fetchForSite(site_id) {
     return __awaiter(this, void 0, void 0, function* () {
         var _a, _b, _c, _d;
-        const collections = ['pages', 'sources', 'images', 'tiles'];
-        const taxonomies = ['icons', 'action_fields', 'sdg_targets'];
-        const global = ['seo', 'footer', 'strings'];
+        const collections = process.env.SET_COLLECTIONS
+            ? process.env.SET_COLLECTIONS.split(',')
+            : ['pages', 'sources', 'images', 'tiles'];
+        const taxonomies = process.env.SET_TAXONOMIES
+            ? process.env.SET_TAXONOMIES.split(',')
+            : ['icons', 'action_fields', 'sdg_targets'];
+        const global = process.env.SET_GLOBAL
+            ? process.env.SET_GLOBAL.split(',')
+            : ['seo', 'footer', 'strings'];
         const data = {};
         const results = [];
         const limit = pLimit(10); // limit concurrent requests

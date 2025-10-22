@@ -15,6 +15,7 @@ export type RowDataType = DataValue & {
   variant?: string | null
   decimals?: number | null
   divider: boolean
+  hide_trend: boolean
 }
 
 export type RowDataCollection = Record<string, RowDataType>
@@ -179,6 +180,7 @@ export function getRows(
       variant: row.variant ?? null,
       decimals,
       divider: row.divider ?? true,
+      hide_trend: row.hide_trend ?? false,
     }
   })
 

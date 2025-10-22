@@ -221,7 +221,11 @@ function fetchForSite(site_id) {
         for (const c of collections) {
             // eslint-disable-next-line no-console
             console.log(`ℹ️ Creating populated collection: ${c} (${site_id})`);
-            yield createPopulatedCollection(site_id, c);
+            const result = yield createPopulatedCollection(site_id, c);
+            results.push({
+                name: 'populated_collection::' + c,
+                success: result !== null,
+            });
         }
         return results;
     });

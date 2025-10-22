@@ -1,4 +1,10 @@
-export { getTimeline, getCompiledDatasource, getRows } from './sources'
+export {
+  getTimeline,
+  getCompiledDatasource,
+  getRows,
+  RowDataType,
+  RowDataCollection,
+} from './sources'
 export {
   getDataPoint,
   getAllStrings,

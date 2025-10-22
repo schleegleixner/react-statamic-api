@@ -99,7 +99,7 @@ export function getRows(datasource, yearIndex) {
     }
     const new_values = {};
     rows.forEach(row => {
-        var _a, _b, _c, _d, _e, _f, _g;
+        var _a, _b, _c, _d, _e, _f, _g, _h;
         const current_value = current[row.key];
         const previous_value = previous && row.key in previous ? ((_a = previous[row.key]) !== null && _a !== void 0 ? _a : null) : null;
         // collect all values for the keys
@@ -117,6 +117,7 @@ export function getRows(datasource, yearIndex) {
             variant: (_f = row.variant) !== null && _f !== void 0 ? _f : null,
             decimals,
             divider: (_g = row.divider) !== null && _g !== void 0 ? _g : true,
+            hide_trend: (_h = row.hide_trend) !== null && _h !== void 0 ? _h : false,
         };
     });
     return {

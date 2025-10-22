@@ -347,7 +347,11 @@ async function fetchForSite(site_id: string) {
   for (const c of collections) {
     // eslint-disable-next-line no-console
     console.log(`ℹ️ Creating populated collection: ${c} (${site_id})`)
-    await createPopulatedCollection(site_id, c)
+    const result = await createPopulatedCollection(site_id, c)
+    results.push({
+      name: 'populated_collection::' + c,
+      success: result !== null,
+    })
   }
 
   return results

@@ -72,8 +72,7 @@ export function getCompiledDatasource(
   datasource_id: string | number,
 ): TileDatasourceType | null {
   const datasource = getDataSource(tile_payload, datasource_id)
-
-  if (!datasource || !datasource.content || datasource.content.length === 0) {
+  if (!datasource?.content?.length) {
     return null
   }
 
@@ -81,52 +80,47 @@ export function getCompiledDatasource(
     JSON.stringify(datasource),
   )
 
-  // iterate over datasource.content and apply table_rows overrides
-  cloned_datasource.content = cloned_datasource.content.map(
-    (row: InputDataType) => {
-      const new_row: InputDataType = {
-        INDEX: row.INDEX,
-      }
+  cloned_datasource.content = cloned_datasource.content
+    .map((row: InputDataType) => {
+      let is_valid = false
+      const new_row: InputDataType = { INDEX: row.INDEX }
 
-      // apply arithmetic operations
       cloned_datasource.table_rows?.forEach((table_row: TableRowType) => {
-        const keys = table_row.key.split(';').map((key: string) => key.trim())
+        const keys = table_row.key.split(';').map(k => k.trim())
         const multiplier = table_row.multiplier ?? 1
         let value: number | null = null
 
-        keys.forEach((key: string) => {
+        keys.forEach(key => {
           const is_negative = key.startsWith('-')
           const effective_key = is_negative ? key.slice(1) : key
           const effective_multiplier = is_negative ? -multiplier : multiplier
+          const original_value = row[effective_key]
 
-          // set new value if the key exists in the row
-          if (effective_key in row) {
-            const original_value = row[effective_key]
-
-            // if value can be numerical (even if its a string), apply multiplier
-            if (original_value && typeof (original_value * 1) === 'number') {
-              const checked_value = checkValue(
-                original_value,
-                effective_multiplier,
-              )
-              if (checked_value !== null) {
-                value = (value ?? 0) + checked_value
-              }
+          if (original_value != null && !isNaN(original_value * 1)) {
+            const checked_value = checkValue(
+              original_value,
+              effective_multiplier,
+            )
+            if (checked_value !== null) {
+              value = (value ?? 0) + checked_value
             }
           }
-
-          // apply maximum precision (if defined)
-          new_row[table_row.key] =
-            value && typeof table_row.decimals === 'number'
-              ? parseFloat(value.toFixed(table_row.decimals * 1))
-              : value
         })
-      })
-      return new_row
-    },
-  )
 
-  return cloned_datasource
+        if (value != null) {
+          new_row[table_row.key] =
+            typeof table_row.decimals === 'number'
+              ? parseFloat((value as number).toFixed(table_row.decimals))
+              : value
+          is_valid = true
+        }
+      })
+
+      return is_valid ? new_row : null
+    })
+    .filter(row => row !== null)
+
+  return cloned_datasource.content.length ? cloned_datasource : null
 }
 
 export function getRows(

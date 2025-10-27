@@ -74,7 +74,6 @@ function fetchContent() {
 }
 function createPopulatedCollection(collection_id_1) {
     return __awaiter(this, arguments, void 0, function* (collection_id, site_id = 'default') {
-        console.log('===>', collection_id, site_id);
         const collection = yield getCollection(collection_id, temporary_folder);
         if (!collection) {
             // eslint-disable-next-line no-console
@@ -98,12 +97,10 @@ function createPopulatedCollection(collection_id_1) {
             }
             // tiles
             if (entry.tile_id) {
-                console.log('📄 Fetching tile content for', entry.tile_id, temporary_folder);
                 entry.content = yield getContent(collection_id, entry.tile_id, temporary_folder);
             }
             // pages
             if (collection_id === 'pages') {
-                console.log('📄 Fetching page content for', entry.slug, temporary_folder);
                 entry.content = yield getContent('pages', entry.slug, temporary_folder);
             }
             // sources

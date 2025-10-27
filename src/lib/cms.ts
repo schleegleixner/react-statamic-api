@@ -99,7 +99,6 @@ async function createPopulatedCollection(
   collection_id: string,
   site_id: string = 'default',
 ): Promise<any> {
-  console.log('===>', collection_id, site_id)
   const collection = await getCollection(collection_id, temporary_folder)
 
   if (!collection) {
@@ -135,11 +134,6 @@ async function createPopulatedCollection(
 
       // tiles
       if (entry.tile_id) {
-        console.log(
-          '📄 Fetching tile content for',
-          entry.tile_id,
-          temporary_folder,
-        )
         entry.content = await getContent(
           collection_id,
           entry.tile_id,
@@ -149,11 +143,6 @@ async function createPopulatedCollection(
 
       // pages
       if (collection_id === 'pages') {
-        console.log(
-          '📄 Fetching page content for',
-          entry.slug,
-          temporary_folder,
-        )
         entry.content = await getContent('pages', entry.slug, temporary_folder)
       }
 

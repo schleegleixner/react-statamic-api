@@ -120,6 +120,13 @@ export function getCompiledDatasource(
     })
     .filter(row => row !== null)
 
+  cloned_datasource.year_min = Math.min(
+    ...cloned_datasource.content.map((d: InputDataType) => d.INDEX as number),
+  )
+  cloned_datasource.year_max = Math.max(
+    ...cloned_datasource.content.map((d: InputDataType) => d.INDEX as number),
+  )
+
   return cloned_datasource.content.length ? cloned_datasource : null
 }
 

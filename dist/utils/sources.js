@@ -73,6 +73,8 @@ export function getCompiledDatasource(tile_payload, datasource_id) {
         return is_valid ? new_row : null;
     })
         .filter(row => row !== null);
+    cloned_datasource.year_min = Math.min(...cloned_datasource.content.map((d) => d.INDEX));
+    cloned_datasource.year_max = Math.max(...cloned_datasource.content.map((d) => d.INDEX));
     return cloned_datasource.content.length ? cloned_datasource : null;
 }
 export function getRows(datasource, yearIndex) {

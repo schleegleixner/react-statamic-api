@@ -36,6 +36,8 @@ export type TileDatasourceType = {
   timeline: number[]
   entry_count: number
   allow_download: boolean
+  year_min?: number
+  year_max?: number
 }
 
 export interface TilePayloadType {

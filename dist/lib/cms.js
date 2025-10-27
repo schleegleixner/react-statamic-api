@@ -72,12 +72,13 @@ function fetchContent() {
         return yield fetchFromRemote(site_id, 'content', singular_id, id);
     });
 }
-function createPopulatedCollection() {
-    return __awaiter(this, arguments, void 0, function* (site_id = 'default', collection_id) {
-        const collection = yield getCollection(collection_id, site_id);
+function createPopulatedCollection(collection_id_1) {
+    return __awaiter(this, arguments, void 0, function* (collection_id, site_id = 'default') {
+        console.log('===>', collection_id, site_id);
+        const collection = yield getCollection(collection_id, temporary_folder);
         if (!collection) {
             // eslint-disable-next-line no-console
-            console.warn(`⚠️ Collection not found: ${collection_id} (${site_id})`, collection);
+            console.warn(`⚠️ Collection not found: ${collection_id} (${temporary_folder})`, collection);
             return null;
         }
         yield Promise.all(collection.map((entry) => __awaiter(this, void 0, void 0, function* () {
@@ -97,12 +98,13 @@ function createPopulatedCollection() {
             }
             // tiles
             if (entry.tile_id) {
-                entry.content = yield getContent(collection_id, entry.tile_id, site_id);
+                console.log('📄 Fetching tile content for', entry.tile_id, temporary_folder);
+                entry.content = yield getContent(collection_id, entry.tile_id, temporary_folder);
             }
             // pages
             if (collection_id === 'pages') {
-                console.log('📄 Fetching page content for', entry.slug);
-                entry.content = yield getContent('pages', entry.slug, site_id);
+                console.log('📄 Fetching page content for', entry.slug, temporary_folder);
+                entry.content = yield getContent('pages', entry.slug, temporary_folder);
             }
             // sources
             if (entry.file_name) {
@@ -221,7 +223,7 @@ function fetchForSite(site_id) {
         for (const c of collections) {
             // eslint-disable-next-line no-console
             console.log(`ℹ️ Creating populated collection: ${c} (${site_id})`);
-            const result = yield createPopulatedCollection(site_id, c);
+            const result = yield createPopulatedCollection(c, site_id);
             results.push({
                 name: 'populated_collection::' + c,
                 success: result !== null,

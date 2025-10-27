@@ -96,15 +96,16 @@ async function fetchContent(
 }
 
 async function createPopulatedCollection(
-  site_id: string = 'default',
   collection_id: string,
+  site_id: string = 'default',
 ): Promise<any> {
-  const collection = await getCollection(collection_id, site_id)
+  console.log('===>', collection_id, site_id)
+  const collection = await getCollection(collection_id, temporary_folder)
 
   if (!collection) {
     // eslint-disable-next-line no-console
     console.warn(
-      `⚠️ Collection not found: ${collection_id} (${site_id})`,
+      `⚠️ Collection not found: ${collection_id} (${temporary_folder})`,
       collection,
     )
     return null
@@ -134,13 +135,26 @@ async function createPopulatedCollection(
 
       // tiles
       if (entry.tile_id) {
-        entry.content = await getContent(collection_id, entry.tile_id, site_id)
+        console.log(
+          '📄 Fetching tile content for',
+          entry.tile_id,
+          temporary_folder,
+        )
+        entry.content = await getContent(
+          collection_id,
+          entry.tile_id,
+          temporary_folder,
+        )
       }
 
       // pages
       if (collection_id === 'pages') {
-        console.log('📄 Fetching page content for', entry.slug)
-        entry.content = await getContent('pages', entry.slug, site_id)
+        console.log(
+          '📄 Fetching page content for',
+          entry.slug,
+          temporary_folder,
+        )
+        entry.content = await getContent('pages', entry.slug, temporary_folder)
       }
 
       // sources
@@ -347,7 +361,7 @@ async function fetchForSite(site_id: string) {
   for (const c of collections) {
     // eslint-disable-next-line no-console
     console.log(`ℹ️ Creating populated collection: ${c} (${site_id})`)
-    const result = await createPopulatedCollection(site_id, c)
+    const result = await createPopulatedCollection(c, site_id)
     results.push({
       name: 'populated_collection::' + c,
       success: result !== null,

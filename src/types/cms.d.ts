@@ -15,4 +15,5 @@ export type StepResultType = {
 export type RebuildResult = {
   name: string
   success: boolean
+  result?: any
 }

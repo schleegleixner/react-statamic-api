@@ -23,38 +23,36 @@ const temporary_folder = 'temp'
 export async function fetchFromStatamic(sites: string[]): Promise<ResultType> {
   const results: StepResultType[] = []
 
-  const rebuildResult = await rebuildCache(sites)
+  const rebuild_results = await rebuildCache(sites)
+  const rebuild_success = rebuild_results.every(
+    result => result.success === true,
+  )
+
   results.push({
-    name: 'rebuild',
-    success: rebuildResult !== false,
-    payload: rebuildResult,
+    name: 'step::rebuild',
+    success: rebuild_success,
+    payload: rebuild_results,
   })
 
-  if (rebuildResult === false) {
-    return {
-      message: 'Failed to rebuild cache. Aborting...',
-      results,
-      success: false,
+  if (rebuild_success) {
+    const revalidation_result = await revalidateContent()
+    if (!revalidation_result.success) {
+      results.push({
+        name: 'step::revalidation',
+        success: false,
+        error: revalidation_result.error,
+      })
+    } else {
+      results.push({ name: 'step::revalidation', success: true })
     }
   }
 
-  const revalidationResult = await revalidateContent()
-  if (!revalidationResult.success) {
-    results.push({
-      name: 'revalidation',
-      success: false,
-      error: revalidationResult.error,
-    })
-  } else {
-    results.push({ name: 'revalidation', success: true })
-  }
-
-  const overallSuccess = results.every(step => step.success)
-  const message = overallSuccess
+  const overall_success = results.every(step => step.success)
+  const message = overall_success
     ? 'Success! Cache has been flushed and rebuilt.'
     : 'Some steps failed. Check the results for more information.'
 
-  return { message, results, success: overallSuccess }
+  return { message, results, success: overall_success }
 }
 
 async function fetchFromRemote(
@@ -217,25 +215,29 @@ async function downloadFile(
 }
 
 // rebuild the cache for all sites
-export async function rebuildCache(sites: string[]) {
+export async function rebuildCache(sites: string[]): Promise<RebuildResult[]> {
   // if no sites are defined, use a default site
   if (!sites || sites.length === 0) {
-    return false
+    return []
   }
 
   const results = await Promise.all(
     sites.map(async site => {
+      const name = 'site::' + site
       try {
         ensureCacheFolder(temporary_folder)
         const fetch_result = await fetchForSite(site)
-        if (fetch_result) {
+
+        // check if any step failed
+        if (fetch_result.every(result => result.success === true)) {
           moveTemporaryFolder(temporary_folder, site)
+          return { name, success: true, result: fetch_result }
         }
-        return { site_id: site, result: fetch_result }
+        return { name, success: false, result: fetch_result }
       } catch (e) {
         // eslint-disable-next-line no-console
         console.error(`❌ Error fetching site: ${site}`, e)
-        return { name: 'site::' + site, success: false, error: e }
+        return { name, success: false, result: e }
       }
     }),
   )

@@ -125,3 +125,13 @@ export function getRows(datasource, yearIndex) {
         row_count: Object.keys(new_values).length,
     };
 }
+export function getDatasetByKey(datasource, key) {
+    return [...datasource.content]
+        .sort((a, b) => { var _a, _b; return +((_a = a.INDEX) !== null && _a !== void 0 ? _a : 0) - +((_b = b.INDEX) !== null && _b !== void 0 ? _b : 0); })
+        .map(r => Number(r[key]) || 0);
+}
+export function getDatasetByIndex(datasource, needle_index) {
+    var _a;
+    const index_str = String(needle_index);
+    return ((_a = datasource.content.find((row) => String(row.INDEX) === index_str)) !== null && _a !== void 0 ? _a : null);
+}

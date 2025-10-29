@@ -1,5 +1,6 @@
 import { PayloadDataType } from '../utils/import';
 import { TileDatasourceType, TilePayloadType } from '../types/tiles';
+import { InputDataType } from '../types/tiles';
 export interface DataValue {
     current: number | null;
     previous: number | null;
@@ -20,3 +21,5 @@ export declare function getRows(datasource: TileDatasourceType, yearIndex?: numb
     rows: RowDataCollection;
     row_count: number;
 };
+export declare function getDatasetByKey(datasource: TileDatasourceType, key: string): number[];
+export declare function getDatasetByIndex(datasource: TileDatasourceType, needle_index: string | number): InputDataType | null;

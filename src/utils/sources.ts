@@ -190,3 +190,24 @@ export function getRows(
     row_count: Object.keys(new_values).length,
   }
 }
+
+export function getDatasetByKey(
+  datasource: TileDatasourceType,
+  key: string,
+): number[] {
+  return [...datasource.content]
+    .sort((a, b) => +(a.INDEX ?? 0) - +(b.INDEX ?? 0))
+    .map(r => Number(r[key]) || 0)
+}
+
+export function getDatasetByIndex(
+  datasource: TileDatasourceType,
+  needle_index: string | number,
+): InputDataType | null {
+  const index_str = String(needle_index)
+  return (
+    datasource.content.find(
+      (row: InputDataType) => String(row.INDEX) === index_str,
+    ) ?? null
+  )
+}

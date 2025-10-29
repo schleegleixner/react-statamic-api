@@ -4,6 +4,8 @@ export {
   getRows,
   RowDataType,
   RowDataCollection,
+  getDatasetByKey,
+  getDatasetByIndex,
 } from './sources'
 export {
   getDataPoint,

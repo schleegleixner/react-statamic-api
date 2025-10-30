@@ -6,6 +6,7 @@ export default async function responseImage(
   sharp: any,
 ): Promise<Response> {
   const { searchParams } = new URL(req.url)
+  const site_id = searchParams.get('site_id') || 'default'
   const w = searchParams.get('w') ?? '1200'
   const h = searchParams.get('h') ?? undefined
   const q = searchParams.get('q') ?? '75'
@@ -25,6 +26,7 @@ export default async function responseImage(
   }
 
   const result = await getProcessedImageData(
+    site_id,
     sharp,
     file_name,
     width,

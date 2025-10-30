@@ -3,6 +3,7 @@ import fs from 'fs'
 import path from 'path'
 
 export default async function getProcessedImageData(
+  site_id: string = 'default',
   sharp: typeof import('sharp') | null,
   file_name: string,
   width: number,
@@ -17,10 +18,10 @@ export default async function getProcessedImageData(
     return false
   }
 
-  const src_path = getCachePath(false, 'images', path.basename(file_name))
-  const cache_dir = getCachePath(false, 'images')
+  const src_path = getCachePath(site_id, 'images', path.basename(file_name))
+  const cache_dir = getCachePath('global', 'images')
   const base = path.basename(src_path, path.extname(src_path))
-  const deriv_name = `${base}_${width}x${height ?? 'auto'}_q${quality}.jpg`
+  const deriv_name = `${site_id}_${base}_${width}x${height ?? 'auto'}_q${quality}.jpg`
   const cache_path = path.join(cache_dir, deriv_name)
 
   try {

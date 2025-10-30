@@ -12,6 +12,7 @@ export default function responseImage(name, req, sharp) {
     return __awaiter(this, void 0, void 0, function* () {
         var _a, _b, _c, _d;
         const { searchParams } = new URL(req.url);
+        const site_id = searchParams.get('site_id') || 'default';
         const w = (_a = searchParams.get('w')) !== null && _a !== void 0 ? _a : '1200';
         const h = (_b = searchParams.get('h')) !== null && _b !== void 0 ? _b : undefined;
         const q = (_c = searchParams.get('q')) !== null && _c !== void 0 ? _c : '75';
@@ -26,7 +27,7 @@ export default function responseImage(name, req, sharp) {
                 status: 404,
             });
         }
-        const result = yield getProcessedImageData(sharp, file_name, width, height, quality);
+        const result = yield getProcessedImageData(site_id, sharp, file_name, width, height, quality);
         if (!result) {
             return new Response(null, {
                 status: 404,

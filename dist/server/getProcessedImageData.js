@@ -10,18 +10,18 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import { getCachePath } from '../utils/filesystem';
 import fs from 'fs';
 import path from 'path';
-export default function getProcessedImageData(sharp_1, file_name_1, width_1) {
-    return __awaiter(this, arguments, void 0, function* (sharp, file_name, width, height = null, quality = 80) {
+export default function getProcessedImageData() {
+    return __awaiter(this, arguments, void 0, function* (site_id = 'default', sharp, file_name, width, height = null, quality = 80) {
         if (typeof window !== 'undefined') {
             throw new Error('processImageData cannot be run in the browser');
         }
         if (!file_name || (Array.isArray(file_name) && file_name.length === 0)) {
             return false;
         }
-        const src_path = getCachePath(false, 'images', path.basename(file_name));
-        const cache_dir = getCachePath(false, 'images');
+        const src_path = getCachePath(site_id, 'images', path.basename(file_name));
+        const cache_dir = getCachePath('global', 'images');
         const base = path.basename(src_path, path.extname(src_path));
-        const deriv_name = `${base}_${width}x${height !== null && height !== void 0 ? height : 'auto'}_q${quality}.jpg`;
+        const deriv_name = `${site_id}_${base}_${width}x${height !== null && height !== void 0 ? height : 'auto'}_q${quality}.jpg`;
         const cache_path = path.join(cache_dir, deriv_name);
         try {
             yield fs.promises.mkdir(cache_dir, { recursive: true });

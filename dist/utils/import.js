@@ -101,7 +101,7 @@ export function filterValidEntries(data) {
             }
             const numeric_value = typeof cleaned_value === 'number'
                 ? cleaned_value
-                : parseFloat(String(cleaned_value).replace(',', '.'));
+                : parseFloat(String(cleaned_value).replace('.', '').replace(',', '.'));
             if (!isNaN(numeric_value)) {
                 filtered_entry[key] = numeric_value;
             }

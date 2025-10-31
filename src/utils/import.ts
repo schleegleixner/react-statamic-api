@@ -119,7 +119,9 @@ export function filterValidEntries(data: PayloadDataType[]): PayloadDataType[] {
         const numeric_value =
           typeof cleaned_value === 'number'
             ? cleaned_value
-            : parseFloat(String(cleaned_value).replace(',', '.'))
+            : parseFloat(
+                String(cleaned_value).replace('.', '').replace(',', '.'), // only use european decimal format
+              )
 
         if (!isNaN(numeric_value)) {
           filtered_entry[key] = numeric_value

@@ -22,3 +22,7 @@ export {
   setPageTitle,
   getTileTitle,
 } from './content'
+export { darkenHexColor } from './colors'
+export { axisMinimum, axisFormatter, calculateTrendline } from './charts'
+export { convertToUnixTimestamp } from './convert'
+export { numberFormat } from './format'

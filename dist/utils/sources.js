@@ -1,14 +1,11 @@
 import { getDataSource } from '../utils/payload';
-const sanitizeLocalizedValue = (value) => {
-    const valueAsString = value.toString();
-    const sanitized = valueAsString.replace(/,/g, '.');
-    return parseFloat(sanitized) || 0;
-};
+import { sanitizeNumber } from './sanitize';
 function checkValue(value, multiplier = 1) {
-    if (value === null || value === undefined || value === '') {
+    const sanitized = sanitizeNumber(value);
+    if (!isNaN(sanitized)) {
         return null;
     }
-    return sanitizeLocalizedValue(value) * multiplier;
+    return sanitized * multiplier;
 }
 function countDecimals(value) {
     var _a;

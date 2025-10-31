@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import Papa from 'papaparse';
 import ExcelJS from 'exceljs';
 import fs from 'fs';
+import { sanitizeNumber } from './sanitize';
 export function readCSV(file_path) {
     const file_data = fs.readFileSync(file_path, 'utf8');
     const delimiter = ';';
@@ -99,9 +100,7 @@ export function filterValidEntries(data) {
             if (typeof value === 'string') {
                 cleaned_value = value.replace(/[\r\n]+/g, ' ').trim();
             }
-            const numeric_value = typeof cleaned_value === 'number'
-                ? cleaned_value
-                : parseFloat(String(cleaned_value).replace('.', '').replace(',', '.'));
+            const numeric_value = sanitizeNumber(cleaned_value);
             if (!isNaN(numeric_value)) {
                 filtered_entry[key] = numeric_value;
             }

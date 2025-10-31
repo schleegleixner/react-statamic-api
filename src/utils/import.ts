@@ -1,6 +1,7 @@
 import Papa from 'papaparse'
 import ExcelJS from 'exceljs'
 import fs from 'fs'
+import { sanitizeNumber } from './sanitize'
 
 export type PayloadDataType = {
   [key: string]: string | number | null
@@ -116,12 +117,7 @@ export function filterValidEntries(data: PayloadDataType[]): PayloadDataType[] {
           cleaned_value = value.replace(/[\r\n]+/g, ' ').trim()
         }
 
-        const numeric_value =
-          typeof cleaned_value === 'number'
-            ? cleaned_value
-            : parseFloat(
-                String(cleaned_value).replace('.', '').replace(',', '.'), // only use european decimal format
-              )
+        const numeric_value = sanitizeNumber(cleaned_value)
 
         if (!isNaN(numeric_value)) {
           filtered_entry[key] = numeric_value

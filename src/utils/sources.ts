@@ -2,6 +2,7 @@ import { PayloadDataType } from '../utils/import'
 import { getDataSource } from '../utils/payload'
 import { TileDatasourceType, TilePayloadType } from '../types/tiles'
 import { InputDataType, TableRowType } from '../types/tiles'
+import { sanitizeNumber } from './sanitize'
 
 export interface DataValue {
   current: number | null
@@ -20,18 +21,14 @@ export type RowDataType = DataValue & {
 
 export type RowDataCollection = Record<string, RowDataType>
 
-const sanitizeLocalizedValue = (value: string | number): number => {
-  const valueAsString = value.toString()
-  const sanitized = valueAsString.replace(/,/g, '.')
-  return parseFloat(sanitized) || 0
-}
-
 function checkValue(value: any, multiplier: number = 1): number | null {
-  if (value === null || value === undefined || value === '') {
+  const sanitized = sanitizeNumber(value)
+
+  if (!isNaN(sanitized)) {
     return null
   }
 
-  return sanitizeLocalizedValue(value) * multiplier
+  return sanitized * multiplier
 }
 
 function countDecimals(value: number): number {

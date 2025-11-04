@@ -2,7 +2,7 @@ import { getDataSource } from '../utils/payload';
 import { sanitizeNumber } from './sanitize';
 function checkValue(value, multiplier = 1) {
     const sanitized = sanitizeNumber(value);
-    if (!isNaN(sanitized)) {
+    if (isNaN(sanitized)) {
         return null;
     }
     return sanitized * multiplier;

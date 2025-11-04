@@ -24,7 +24,7 @@ export type RowDataCollection = Record<string, RowDataType>
 function checkValue(value: any, multiplier: number = 1): number | null {
   const sanitized = sanitizeNumber(value)
 
-  if (!isNaN(sanitized)) {
+  if (isNaN(sanitized)) {
     return null
   }
 

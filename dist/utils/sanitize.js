@@ -19,14 +19,8 @@ export const sanitizeNumber = (value, default_value = NaN) => {
         const parsed = parseFloat(str);
         return Number.isNaN(parsed) ? default_value : parsed;
     };
-    // handle different number formats
-    if (/^\d{1,3}(\.\d{3})*,\d+$/.test(str_value)) {
-        return parseOrDefault(str_value.replace(/\./g, '').replace(',', '.'));
-    }
-    if (/^\d+(\.\d+)?$/.test(str_value)) {
-        return parseOrDefault(str_value);
-    }
-    return default_value;
+    // handle german number format e.g., "1.234,56"
+    return parseOrDefault(str_value.replace(/\./g, '').replace(',', '.'));
 };
 export function replaceContentTags(title) {
     return title.replace(/\[animate:\s*([0-9.,]+)\]/g, '$1');

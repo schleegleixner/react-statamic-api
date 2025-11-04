@@ -1,7 +1,12 @@
-export const sanitizeName = (name) => name
-    .toLowerCase()
-    .replace(/\s+/g, '')
-    .replace(/[^a-z0-9]/g, '');
+export const sanitizeName = (name) => {
+    if (!name || typeof name !== 'string') {
+        return '';
+    }
+    return name
+        .toLowerCase()
+        .replace(/\s+/g, '')
+        .replace(/[^a-z0-9]/g, '');
+};
 export const sanitizeNumber = (value, default_value = NaN) => {
     if (value === null || value === undefined) {
         return default_value;
@@ -9,18 +14,17 @@ export const sanitizeNumber = (value, default_value = NaN) => {
     if (typeof value === 'number') {
         return value;
     }
-    const cleaned = value.trim();
+    const str_value = String(value).trim();
     const parseOrDefault = (str) => {
         const parsed = parseFloat(str);
         return Number.isNaN(parsed) ? default_value : parsed;
     };
-    // European format: 1.234,56
-    if (/^\d{1,3}(\.\d{3})*,\d+$/.test(cleaned)) {
-        return parseOrDefault(cleaned.replace(/\./g, '').replace(',', '.'));
+    // handle different number formats
+    if (/^\d{1,3}(\.\d{3})*,\d+$/.test(str_value)) {
+        return parseOrDefault(str_value.replace(/\./g, '').replace(',', '.'));
     }
-    // US format: 1,234.56
-    if (/^\d+(\.\d+)?$/.test(cleaned)) {
-        return parseOrDefault(cleaned);
+    if (/^\d+(\.\d+)?$/.test(str_value)) {
+        return parseOrDefault(str_value);
     }
     return default_value;
 };

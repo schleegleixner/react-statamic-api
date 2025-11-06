@@ -42,11 +42,13 @@ export function getCompiledDatasource(tile_payload, datasource_id) {
         var _a;
         let is_valid = false;
         const new_row = { INDEX: row.INDEX };
+        // process all table rows
         (_a = cloned_datasource.table_rows) === null || _a === void 0 ? void 0 : _a.forEach((table_row) => {
             var _a;
             const keys = table_row.key.split(';').map(k => k.trim());
             const multiplier = (_a = table_row.multiplier) !== null && _a !== void 0 ? _a : 1;
             let value = null;
+            // sum up all keys
             keys.forEach(key => {
                 const is_negative = key.startsWith('-');
                 const effective_key = is_negative ? key.slice(1) : key;
@@ -59,6 +61,7 @@ export function getCompiledDatasource(tile_payload, datasource_id) {
                     }
                 }
             });
+            // assign the value if valid
             if (value != null) {
                 new_row[table_row.key] =
                     typeof table_row.decimals === 'number'
@@ -67,6 +70,7 @@ export function getCompiledDatasource(tile_payload, datasource_id) {
                 is_valid = true;
             }
         });
+        // only return the row if at least one value is valid
         return is_valid ? new_row : null;
     })
         .filter(row => row !== null);

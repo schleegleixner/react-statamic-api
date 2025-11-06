@@ -19,9 +19,9 @@ export default function getProcessedImageData() {
             return false;
         }
         const src_path = getCachePath(site_id, 'images', path.basename(file_name));
-        const cache_dir = getCachePath('global', 'images');
+        const cache_dir = getCachePath(site_id, 'images', 'processed');
         const base = path.basename(src_path, path.extname(src_path));
-        const deriv_name = `${site_id}_${base}_${width}x${height !== null && height !== void 0 ? height : 'auto'}_q${quality}.jpg`;
+        const deriv_name = `${base}_${width}x${height !== null && height !== void 0 ? height : 'auto'}_q${quality}.jpg`;
         const cache_path = path.join(cache_dir, deriv_name);
         try {
             yield fs.promises.mkdir(cache_dir, { recursive: true });

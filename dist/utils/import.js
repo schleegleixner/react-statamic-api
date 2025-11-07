@@ -62,18 +62,26 @@ export function readExcel(file_path) {
         return rows;
     });
 }
+function sanitizeString(str) {
+    if (typeof str !== 'string') {
+        return str;
+    }
+    return str
+        .normalize('NFKD') // fix (é -> e)
+        .replace(/[^\x00-\x7F]/g, '?') // replace everything non-ascii with ?
+        .replace(/[\uFFFD]/g, '?') // replace invalid characters with ?
+        .trim();
+}
 export function normalizeHeaders(data) {
     return data.map(entry => {
         const normalizedEntry = {};
         Object.keys(entry).forEach(key => {
-            // normalize timescale keys
-            const normalizedKey = key.toUpperCase() === 'ZEIT' || key.toUpperCase() === 'JAHR'
+            const raw_key = sanitizeString(key);
+            const normalizedKey = ['ZEIT', 'JAHR'].includes(raw_key.toUpperCase())
                 ? 'INDEX'
-                : key;
-            normalizedEntry[normalizedKey] = entry[key];
-            // remove leading and trailing whitespace from keys
-            const trimmedKey = normalizedKey.trim();
-            normalizedEntry[trimmedKey] = entry[key];
+                : raw_key;
+            const cleaned_key = normalizedKey.trim();
+            normalizedEntry[cleaned_key] = entry[key];
         });
         return normalizedEntry;
     });

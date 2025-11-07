@@ -69,21 +69,29 @@ export async function readExcel(file_path: string): Promise<PayloadDataType[]> {
   return rows
 }
 
+function sanitizeString(str: string): string {
+  if (typeof str !== 'string') {
+    return str
+  }
+  return str
+    .normalize('NFKD') // fix (é -> e)
+    .replace(/[^\x00-\x7F]/g, '?') // replace everything non-ascii with ?
+    .replace(/[\uFFFD]/g, '?') // replace invalid characters with ?
+    .trim()
+}
+
 export function normalizeHeaders(data: PayloadDataType[]): PayloadDataType[] {
   return data.map(entry => {
     const normalizedEntry: PayloadDataType = {}
 
     Object.keys(entry).forEach(key => {
-      // normalize timescale keys
-      const normalizedKey =
-        key.toUpperCase() === 'ZEIT' || key.toUpperCase() === 'JAHR'
-          ? 'INDEX'
-          : key
-      normalizedEntry[normalizedKey] = entry[key]
+      const raw_key = sanitizeString(key)
+      const normalizedKey = ['ZEIT', 'JAHR'].includes(raw_key.toUpperCase())
+        ? 'INDEX'
+        : raw_key
 
-      // remove leading and trailing whitespace from keys
-      const trimmedKey = normalizedKey.trim()
-      normalizedEntry[trimmedKey] = entry[key]
+      const cleaned_key = normalizedKey.trim()
+      normalizedEntry[cleaned_key] = entry[key]
     })
 
     return normalizedEntry

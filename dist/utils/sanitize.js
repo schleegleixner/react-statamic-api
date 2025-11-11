@@ -11,16 +11,16 @@ export const sanitizeNumber = (value, default_value = NaN) => {
     if (value === null || value === undefined) {
         return default_value;
     }
-    if (typeof value === 'number') {
+    if (typeof value === 'number' && Number.isFinite(value)) {
         return value;
     }
-    const str_value = String(value).trim();
-    const parseOrDefault = (str) => {
-        const parsed = parseFloat(str);
-        return Number.isNaN(parsed) ? default_value : parsed;
-    };
-    // handle german number format e.g., "1.234,56"
-    return parseOrDefault(str_value.replace(/\./g, '').replace(',', '.'));
+    const str_value = String(value).trim().replace(/\./g, '').replace(',', '.');
+    // check if the cleaned string is a valid number representation
+    if (!/^-?\d+(\.\d+)?$/.test(str_value)) {
+        return default_value;
+    }
+    const parsed = parseFloat(str_value);
+    return Number.isNaN(parsed) ? default_value : parsed;
 };
 export function replaceContentTags(title) {
     return title.replace(/\[animate:\s*([0-9.,]+)\]/g, '$1');

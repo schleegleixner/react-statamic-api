@@ -10,23 +10,24 @@ export const sanitizeName = (name?: string | null): string => {
 
 export const sanitizeNumber = (
   value: string | number | null | undefined,
-  default_value: number = NaN,
+  default_value: any = NaN,
 ): number => {
   if (value === null || value === undefined) {
     return default_value
   }
-  if (typeof value === 'number') {
+  if (typeof value === 'number' && Number.isFinite(value)) {
     return value
   }
 
-  const str_value = String(value).trim()
-  const parseOrDefault = (str: string) => {
-    const parsed = parseFloat(str)
-    return Number.isNaN(parsed) ? default_value : parsed
+  const str_value = String(value).trim().replace(/\./g, '').replace(',', '.')
+
+  // check if the cleaned string is a valid number representation
+  if (!/^-?\d+(\.\d+)?$/.test(str_value)) {
+    return default_value
   }
 
-  // handle german number format e.g., "1.234,56"
-  return parseOrDefault(str_value.replace(/\./g, '').replace(',', '.'))
+  const parsed = parseFloat(str_value)
+  return Number.isNaN(parsed) ? default_value : parsed
 }
 
 export function replaceContentTags(title: string): string {

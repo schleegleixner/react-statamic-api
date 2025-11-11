@@ -99,8 +99,13 @@ export function filterValidEntries(data) {
         // create a new object with filtered keys
         const filtered_entry = {};
         for (const [key, value] of Object.entries(entry)) {
-            // skip keys that start with _
-            if (key === '' || key.startsWith('_')) {
+            // skip empty keys and keys that start with _ entirely
+            if (key === null || key === '' || key.startsWith('_')) {
+                continue;
+            }
+            // convert index key to number (if applicable)
+            if (key === 'INDEX') {
+                filtered_entry[key] = sanitizeNumber(value, value);
                 continue;
             }
             // remove \r and \n from strings

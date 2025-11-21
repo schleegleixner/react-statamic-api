@@ -1,3 +1,8 @@
+export type BreadcrumbType = {
+  title: string | null
+  link?: string | null
+}
+
 export type PageMappingType = {
   id: string
   site_id: string

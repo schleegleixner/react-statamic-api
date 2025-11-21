@@ -61,11 +61,11 @@ export function getCachePath(site_id = null, content_type = 'content', folder = 
 export function getCachedFilePath(site_id = 'default', content_type = 'content', folder = false, id) {
     return getCachePath(site_id, content_type, id ? folder : false, `${id || folder || 'default'}.json`);
 }
-export function findDataFile(filename = false) {
+export function findDataFile(filename = false, site_id = null) {
     const folders = ['data', 'source'];
     // check if file exists in any of the paths
     for (const folder of folders) {
-        const full_path = getCachePath(null, folder, filename);
+        const full_path = getCachePath(site_id, folder, filename);
         if (fs.existsSync(full_path)) {
             return full_path;
         }

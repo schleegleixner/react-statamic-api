@@ -101,7 +101,7 @@ function createPopulatedCollection(collection_id_1) {
             }
             // sources
             if (entry.file_name) {
-                const content = yield getDataFile(entry.file_name);
+                const content = yield getDataFile(entry.file_name, temporary_folder);
                 const timeline = getTimeline(content);
                 entry.content = content;
                 entry.timeline = timeline;

@@ -4,9 +4,10 @@ import { PayloadDataType, readCSV, readExcel, readJSON } from '../utils/import'
 
 export default async function getDataFile(
   file_name: string,
+  site_id: string | null = null,
 ): Promise<PayloadDataType[]> {
   const sanitized_file_name = path.basename(file_name)
-  const file_path = findDataFile(sanitized_file_name)
+  const file_path = findDataFile(sanitized_file_name, site_id)
 
   if (!file_path) {
     return []

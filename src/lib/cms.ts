@@ -146,7 +146,7 @@ async function createPopulatedCollection(
 
       // sources
       if (entry.file_name) {
-        const content = await getDataFile(entry.file_name)
+        const content = await getDataFile(entry.file_name, temporary_folder)
         const timeline = getTimeline(content)
         entry.content = content
         entry.timeline = timeline

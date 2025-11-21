@@ -10,10 +10,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import path from 'path';
 import { findDataFile } from '../utils/filesystem';
 import { readCSV, readExcel, readJSON } from '../utils/import';
-export default function getDataFile(file_name) {
-    return __awaiter(this, void 0, void 0, function* () {
+export default function getDataFile(file_name_1) {
+    return __awaiter(this, arguments, void 0, function* (file_name, site_id = null) {
         const sanitized_file_name = path.basename(file_name);
-        const file_path = findDataFile(sanitized_file_name);
+        const file_path = findDataFile(sanitized_file_name, site_id);
         if (!file_path) {
             return [];
         }

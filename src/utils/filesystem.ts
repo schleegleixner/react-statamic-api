@@ -87,12 +87,15 @@ export function getCachedFilePath(
   )
 }
 
-export function findDataFile(filename: string | boolean = false) {
+export function findDataFile(
+  filename: string | boolean = false,
+  site_id: string | null = null,
+): string | false {
   const folders = ['data', 'source']
 
   // check if file exists in any of the paths
   for (const folder of folders) {
-    const full_path = getCachePath(null, folder, filename)
+    const full_path = getCachePath(site_id, folder, filename)
 
     if (fs.existsSync(full_path)) {
       return full_path

@@ -1,5 +1,6 @@
 export {
   InputDataType,
+  SdgTargetType,
   TableRowType,
   TileDatasourceType,
   TileDataType,

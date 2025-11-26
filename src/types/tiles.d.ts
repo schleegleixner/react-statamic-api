@@ -57,7 +57,7 @@ export interface TilePayloadType {
     category: string
     action_dimension: string
     action_field: string
-    sdg_target: string
+    sdg_targets: [string]
   }
   live: boolean | null
   search: string
@@ -82,8 +82,18 @@ export type TileDataType = {
     category: string
     action_dimension: string
     action_field: string
-    sdg_target: string
+    sdg_targets: [string]
   }
   search: string
   content?: TilePayloadType
+}
+
+export type SdgTargetType = {
+  id: string
+  slug: string
+  data: {
+    title: string
+    number: number
+    copy: string
+  }
 }

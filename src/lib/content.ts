@@ -12,7 +12,7 @@ async function handleRequest(
   id: string | number | boolean = false,
 ): Promise<any> {
   const key = site_id + '.' + content_type + '.' + collection_id + '.' + id
-  let cache_data = readLocalStorage(key)
+  let cache_data = readLocalStorage(key, site_id)
 
   if (!cache_data) {
     cache_data =
@@ -20,7 +20,7 @@ async function handleRequest(
   }
 
   if (cache_data) {
-    writeLocalStorage(key, cache_data, 15) // cache for 15 minutes
+    writeLocalStorage(key, cache_data, 15, site_id) // cache for 15 minutes
     return cache_data // return the cached data
   }
 
@@ -159,12 +159,16 @@ export async function getCompleteTileset(
 
 export async function getImageMeta(
   file_name: string,
+  site_id?: string,
 ): Promise<ImageMetaInterface | false> {
-  let images = readLocalStorage('collection.images') as ImageMetaInterface[]
+  let images = readLocalStorage(
+    'collection.images',
+    site_id,
+  ) as ImageMetaInterface[]
   if (!images) {
-    images = (await getCollection('images')) as ImageMetaInterface[]
+    images = (await getCollection('images', site_id)) as ImageMetaInterface[]
     if (images) {
-      writeLocalStorage('collection.images', images, 60) // cache for 1 hour
+      writeLocalStorage('collection.images', images, 60, site_id) // cache for 1 hour
     }
   }
 

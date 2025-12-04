@@ -14,13 +14,13 @@ import { readLocalStorage, writeLocalStorage } from '../utils/localstorage';
 function handleRequest() {
     return __awaiter(this, arguments, void 0, function* (site_id = 'default', content_type = 'content', collection_id = 'tile', id = false) {
         const key = site_id + '.' + content_type + '.' + collection_id + '.' + id;
-        let cache_data = readLocalStorage(key);
+        let cache_data = readLocalStorage(key, site_id);
         if (!cache_data) {
             cache_data =
                 (yield readCache(site_id, content_type, collection_id, id, false)) || null;
         }
         if (cache_data) {
-            writeLocalStorage(key, cache_data, 15); // cache for 15 minutes
+            writeLocalStorage(key, cache_data, 15, site_id); // cache for 15 minutes
             return cache_data; // return the cached data
         }
         return null;
@@ -109,13 +109,13 @@ export function getCompleteTileset() {
         return updated_collection;
     });
 }
-export function getImageMeta(file_name) {
+export function getImageMeta(file_name, site_id) {
     return __awaiter(this, void 0, void 0, function* () {
-        let images = readLocalStorage('collection.images');
+        let images = readLocalStorage('collection.images', site_id);
         if (!images) {
-            images = (yield getCollection('images'));
+            images = (yield getCollection('images', site_id));
             if (images) {
-                writeLocalStorage('collection.images', images, 60); // cache for 1 hour
+                writeLocalStorage('collection.images', images, 60, site_id); // cache for 1 hour
             }
         }
         if (!images || images.length === 0) {

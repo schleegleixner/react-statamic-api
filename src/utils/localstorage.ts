@@ -5,8 +5,12 @@ export function getAppVersion() {
   )
 }
 
-export function readLocalStorage(key: string) {
-  const versioned_key = key + '_' + getAppVersion()
+export function readLocalStorage(key: string, site_id: string = 'default') {
+  if (site_id === 'preview') {
+    return null // preview mode does not use localStorage
+  }
+
+  const versioned_key = key + '_' + getAppVersion() + '_' + site_id
   try {
     const raw = localStorage.getItem(versioned_key)
     if (!raw) {
@@ -27,8 +31,9 @@ export function writeLocalStorage(
   key: string,
   payload: unknown,
   lifetime: number = 30,
+  site_id: string = 'default',
 ) {
-  const versioned_key = key + '_' + getAppVersion()
+  const versioned_key = key + '_' + getAppVersion() + '_' + site_id
 
   try {
     localStorage.setItem(

@@ -7,4 +7,4 @@ export declare function getCollection(collection_id?: string, site_id?: string):
 export declare function getPopulatedCollection(collection_id?: string, site_id?: string): Promise<any>;
 export declare function getCachedData(api: string): Promise<any>;
 export declare function getCompleteTileset(site_id?: string): Promise<TileDataType[]>;
-export declare function getImageMeta(file_name: string): Promise<ImageMetaInterface | false>;
+export declare function getImageMeta(file_name: string, site_id?: string): Promise<ImageMetaInterface | false>;

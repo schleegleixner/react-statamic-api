@@ -1,29 +1,36 @@
 'use client'
 
-import { RefObject, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export default function useContentWidth<
   T extends HTMLElement = HTMLDivElement,
 >() {
-  const el_ref = useRef<T | null>(null)
-  const [content_width, setContentWidth] = useState(0)
+  const elRef = useRef<T>(null)
+  const [contentWidth, setContentWidth] = useState(0)
 
   useEffect(() => {
-    const el = el_ref.current
+    const el = elRef.current
     if (!el) {
       return
     }
 
-    setContentWidth(el.clientWidth)
+    const updateWidth = () => {
+      setContentWidth(Math.round(el.clientWidth))
+    }
 
-    const ro = new ResizeObserver(([entry]) =>
-      setContentWidth(Math.round(entry.contentRect.width)),
-    )
-    ro.observe(el)
+    // Set initial width
+    updateWidth()
 
-    return () => ro.disconnect()
+    const resizeObserver = new ResizeObserver(() => {
+      updateWidth()
+    })
+
+    resizeObserver.observe(el)
+
+    return () => {
+      resizeObserver.disconnect()
+    }
   }, [])
 
-  // type assertion to ensure the returned ref has the correct type
-  return { el_ref: el_ref as RefObject<T>, content_width }
+  return { elRef, contentWidth }
 }

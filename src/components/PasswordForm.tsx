@@ -6,8 +6,8 @@ export default function PasswordForm({
   className = '',
   lang = 'default',
 }: {
-  className: string
-  lang: string
+  className?: string
+  lang?: string
 }) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')

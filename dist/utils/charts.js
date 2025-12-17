@@ -56,3 +56,48 @@ export const calculateTrendline = (data) => {
         return [x, y];
     });
 };
+// getSplitSeries splits the data into past/present and future series (only linechart)
+export const getSplitSeries = (data, property, split_future = true) => {
+    const aggregated_data = {};
+    data.forEach(item => {
+        var _a;
+        const year = (_a = item.INDEX) === null || _a === void 0 ? void 0 : _a.toString();
+        const value = item[property];
+        if (!year ||
+            isNaN(+year) ||
+            year.length !== 4 ||
+            +year < 1800 ||
+            +year > 2100) {
+            return;
+        }
+        aggregated_data[year] = value;
+    });
+    const current_year = new Date().getFullYear();
+    const sorted_years = Object.keys(aggregated_data).sort();
+    const past_and_present = [];
+    const future = [];
+    sorted_years.forEach(year => {
+        const timestamp = new Date(`${year}-01-01T00:00:00.000Z`).getTime();
+        const value = aggregated_data[year];
+        if (value === null) {
+            return;
+        }
+        if (+year <= current_year || !split_future) {
+            past_and_present.push([timestamp, value]);
+        }
+        else {
+            if (future.length === 0 && past_and_present.length > 0) {
+                const last_past = past_and_present[past_and_present.length - 1];
+                future.push({
+                    value: [...last_past],
+                    symbolSize: 0,
+                });
+            }
+            future.push({
+                value: [timestamp, value],
+                symbolSize: 7,
+            });
+        }
+    });
+    return { past_and_present, future };
+};

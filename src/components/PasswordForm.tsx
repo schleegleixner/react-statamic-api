@@ -32,7 +32,7 @@ export default function PasswordForm({
       <head>
         <title>Passwortschutz</title>
       </head>
-      <body>
+      <body className="bg-primary">
         <form
           className="flex min-h-screen items-center justify-center bg-gray-900 font-sans text-white"
           onSubmit={handleSubmit}
@@ -48,7 +48,7 @@ export default function PasswordForm({
             />
             {error && <p className="mb-2 text-sm text-red-500">{error}</p>}
             <button
-              className="w-full rounded bg-blue-600 px-4 py-2 font-bold hover:bg-blue-700"
+              className="w-full rounded bg-secondary px-4 py-2 font-bold hover:bg-blue-700"
               type="submit"
             >
               Einloggen

@@ -1,16 +1,7 @@
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-export function isAuthenticated(password_1) {
-    return __awaiter(this, arguments, void 0, function* (password, site_id = 'default') {
-        const password_required = site_id === 'preview' || process.env.PASSWORD_PROTECTED === 'true';
-        const is_authenticated = !password_required || password === process.env.PASSWORD;
-        return is_authenticated;
-    });
+export function isAuthenticated(provided_password, site_id = 'default', is_protected = false) {
+    const password_required = site_id === 'preview' ||
+        process.env.PASSWORD_PROTECTED === 'true' ||
+        is_protected;
+    const is_authenticated = !password_required || provided_password === process.env.PASSWORD;
+    return is_authenticated;
 }

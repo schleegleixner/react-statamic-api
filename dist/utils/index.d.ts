@@ -3,7 +3,7 @@ export { getDataPoint, getAllStrings, getDataSource, getSource, getString, } fro
 export { sanitizeName, sanitizeNumber, replaceContentTags } from './sanitize';
 export { findPageByIdOrSlug, getCurrentPageServer, getPageTitleServer, setPageTitle, getTileTitle, } from './content';
 export { darkenHexColor } from './colors';
-export { axisMinimum, axisFormatter, calculateTrendline } from './charts';
+export { axisMinimum, axisFormatter, calculateTrendline, getSplitSeries, } from './charts';
 export { convertToUnixTimestamp } from './convert';
 export { numberFormat } from './format';
 export { getGlobalString, getSiteId } from './translation';

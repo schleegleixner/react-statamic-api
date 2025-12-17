@@ -1,3 +1,5 @@
+import { InputDataType } from '../types/tiles'
+
 // calculate a nice minimum for chart axes
 export const axisMinimum = (axisValues: { min: number; max: number }) => {
   const realMin = axisValues.min
@@ -77,4 +79,61 @@ export const calculateTrendline = (
     const y = slope * x + intercept
     return [x, y]
   })
+}
+
+// getSplitSeries splits the data into past/present and future series (only linechart)
+export const getSplitSeries = (
+  data: InputDataType[],
+  property: keyof InputDataType,
+  split_future: boolean = true,
+) => {
+  const aggregated_data: Record<string, number | null> = {}
+
+  data.forEach(item => {
+    const year = item.INDEX?.toString()
+    const value = item[property]
+    if (
+      !year ||
+      isNaN(+year) ||
+      year.length !== 4 ||
+      +year < 1800 ||
+      +year > 2100
+    ) {
+      return
+    }
+    aggregated_data[year] = value
+  })
+
+  const current_year = new Date().getFullYear()
+  const sorted_years = Object.keys(aggregated_data).sort()
+  const past_and_present: [number, number | null][] = []
+  const future: { value: [number, number | null]; symbolSize: number }[] = []
+
+  sorted_years.forEach(year => {
+    const timestamp = new Date(`${year}-01-01T00:00:00.000Z`).getTime()
+    const value = aggregated_data[year]
+
+    if (value === null) {
+      return
+    }
+
+    if (+year <= current_year || !split_future) {
+      past_and_present.push([timestamp, value])
+    } else {
+      if (future.length === 0 && past_and_present.length > 0) {
+        const last_past = past_and_present[past_and_present.length - 1]
+        future.push({
+          value: [...last_past] as [number, number | null],
+          symbolSize: 0,
+        })
+      }
+
+      future.push({
+        value: [timestamp, value],
+        symbolSize: 7,
+      })
+    }
+  })
+
+  return { past_and_present, future }
 }

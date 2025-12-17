@@ -1,1 +1,1 @@
-export declare function isAuthenticated(password: string, site_id?: string): Promise<boolean>;
+export declare function isAuthenticated(provided_password: string, site_id?: string, is_protected?: boolean): boolean;

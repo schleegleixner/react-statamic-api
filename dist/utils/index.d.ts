@@ -8,3 +8,4 @@ export { convertToUnixTimestamp } from './convert';
 export { numberFormat } from './format';
 export { getGlobalString, getSiteId } from './translation';
 export { isAuthenticated } from './auth';
+export { default as remarkAnimate } from './markdown/remarkAnimate';

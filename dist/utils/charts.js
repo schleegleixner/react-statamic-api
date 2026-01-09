@@ -23,6 +23,8 @@ export const axisFormatter = (value) => {
 };
 // calculate the trendline using linear regression
 export const calculateTrendline = (data) => {
+    // parse date - handles both timestamps as numbers and ISO strings
+    const parseDate = (date) => typeof date === 'number' ? date : new Date(date).getTime();
     // filter out invalid data points
     const isValidDataPoint = (item) => {
         if (!Array.isArray(item) || item.length !== 2) {
@@ -36,14 +38,13 @@ export const calculateTrendline = (data) => {
         merged[timestamp] = (merged[timestamp] || 0) + value;
     });
     const consolidated_data = Object.entries(merged).map(([timestamp, value]) => [
-        Number(timestamp),
+        parseDate(timestamp),
         value,
     ]);
     const n = consolidated_data.length;
     if (n === 0) {
         return [];
     }
-    const parseDate = (date) => typeof date === 'number' ? date : new Date(date).getTime();
     const sumX = consolidated_data.reduce((acc, [date]) => acc + parseDate(date), 0);
     const sumY = consolidated_data.reduce((acc, [, value]) => acc + value, 0);
     const sumXY = consolidated_data.reduce((acc, [date, value]) => acc + parseDate(date) * value, 0);

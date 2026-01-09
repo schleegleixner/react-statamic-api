@@ -30,6 +30,10 @@ export const axisFormatter = (value: number | string) => {
 export const calculateTrendline = (
   data: [string, number][],
 ): [number, number][] => {
+  // parse date - handles both timestamps as numbers and ISO strings
+  const parseDate = (date: string | number): number =>
+    typeof date === 'number' ? date : new Date(date).getTime()
+
   // filter out invalid data points
   const isValidDataPoint = (item: any): item is [number, string | number] => {
     if (!Array.isArray(item) || item.length !== 2) {
@@ -44,7 +48,7 @@ export const calculateTrendline = (
     merged[timestamp] = (merged[timestamp] || 0) + value
   })
   const consolidated_data = Object.entries(merged).map(([timestamp, value]) => [
-    Number(timestamp),
+    parseDate(timestamp),
     value,
   ])
 
@@ -53,9 +57,6 @@ export const calculateTrendline = (
   if (n === 0) {
     return []
   }
-
-  const parseDate = (date: string | number): number =>
-    typeof date === 'number' ? date : new Date(date).getTime()
 
   const sumX = consolidated_data.reduce(
     (acc, [date]) => acc + parseDate(date),

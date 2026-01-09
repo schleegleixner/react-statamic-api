@@ -1,4 +1,3 @@
-// plugins/remarkAnimate.ts
 import { visit } from 'unist-util-visit';
 const remarkAnimate = () => {
     return (tree) => {

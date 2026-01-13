@@ -19,7 +19,11 @@ export const sanitizeNumber = (
     return value
   }
 
-  const str_value = String(value).trim().replace(/\./g, '').replace(',', '.')
+  const str_value = String(value)
+    .replace(/[%‰]/g, '')
+    .trim()
+    .replace(/\./g, '')
+    .replace(',', '.')
 
   // check if the cleaned string is a valid number representation
   if (!/^-?\d+(\.\d+)?$/.test(str_value)) {

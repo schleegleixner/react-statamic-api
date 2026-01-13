@@ -30,56 +30,51 @@ export const axisFormatter = (value: number | string) => {
 export const calculateTrendline = (
   data: [string, number][],
 ): [number, number][] => {
-  // parse date - handles both timestamps as numbers and ISO strings
-  const parseDate = (date: string | number): number =>
-    typeof date === 'number' ? date : new Date(date).getTime()
-
-  // filter out invalid data points
-  const isValidDataPoint = (item: any): item is [number, string | number] => {
-    if (!Array.isArray(item) || item.length !== 2) {
-      return false
+  const parseDate = (date: string | number): number => {
+    if (typeof date === 'number') {
+      return date
     }
-    return item[1] !== null && !isNaN(Number(item[1]))
+    const asNumber = Number(date)
+    return !isNaN(asNumber) ? asNumber : new Date(date).getTime()
   }
 
-  // consolidate data points with the same x-value (0) by aggregating their y-values (1)
-  const merged: { [key: string]: number } = {}
+  const isValidDataPoint = (item: unknown): item is [string | number, number] =>
+    Array.isArray(item) &&
+    item.length === 2 &&
+    !isNaN(parseDate(item[0])) &&
+    item[1] !== null &&
+    !isNaN(Number(item[1]))
+
+  // consolidate data points with the same x-value by aggregating their y-values
+  const merged: Record<string, number> = {}
   data.filter(isValidDataPoint).forEach(([timestamp, value]) => {
     merged[timestamp] = (merged[timestamp] || 0) + value
   })
-  const consolidated_data = Object.entries(merged).map(([timestamp, value]) => [
-    parseDate(timestamp),
-    value,
-  ])
 
-  const n = consolidated_data.length
+  const points = Object.entries(merged).map(
+    ([timestamp, value]) => [parseDate(timestamp), value] as [number, number],
+  )
 
-  if (n === 0) {
+  if (points.length === 0) {
     return []
   }
 
-  const sumX = consolidated_data.reduce(
-    (acc, [date]) => acc + parseDate(date),
-    0,
-  )
-  const sumY = consolidated_data.reduce((acc, [, value]) => acc + value, 0)
-  const sumXY = consolidated_data.reduce(
-    (acc, [date, value]) => acc + parseDate(date) * value,
-    0,
-  )
-  const sumX2 = consolidated_data.reduce(
-    (acc, [date]) => acc + Math.pow(parseDate(date), 2),
-    0,
+  // calculate sums for linear regression in a single pass
+  const { sumX, sumY, sumXY, sumX2 } = points.reduce(
+    (acc, [x, y]) => ({
+      sumX: acc.sumX + x,
+      sumY: acc.sumY + y,
+      sumXY: acc.sumXY + x * y,
+      sumX2: acc.sumX2 + x * x,
+    }),
+    { sumX: 0, sumY: 0, sumXY: 0, sumX2: 0 },
   )
 
-  const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - Math.pow(sumX, 2))
+  const n = points.length
+  const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX)
   const intercept = (sumY - slope * sumX) / n
 
-  return consolidated_data.map(([date]) => {
-    const x = new Date(date).getTime()
-    const y = slope * x + intercept
-    return [x, y]
-  })
+  return points.map(([x]) => [x, slope * x + intercept])
 }
 
 // getSplitSeries splits the data into past/present and future series (only linechart)

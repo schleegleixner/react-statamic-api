@@ -93,11 +93,15 @@ export function getCompiledDatasource(
           const is_negative = key.startsWith('-')
           const effective_key = is_negative ? key.slice(1) : key
           const effective_multiplier = is_negative ? -multiplier : multiplier
-          const original_value = row[effective_key]
+          const original_value = row[effective_key] as unknown
+          const cleaned_value =
+            typeof original_value === 'string'
+              ? original_value.replace(/[%‰]/g, '').trim()
+              : original_value
 
-          if (original_value != null && !isNaN(original_value * 1)) {
+          if (cleaned_value != null && !isNaN(Number(cleaned_value))) {
             const checked_value = checkValue(
-              original_value,
+              cleaned_value,
               effective_multiplier,
             )
             if (checked_value !== null) {

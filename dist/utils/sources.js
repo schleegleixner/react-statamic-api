@@ -66,11 +66,13 @@ export function getCompiledDatasource(tile_payload, datasource_id) {
                     typeof table_row.decimals === 'number'
                         ? parseFloat(value.toFixed(table_row.decimals))
                         : value;
-                is_valid = true;
+                is_valid = true; // this row is valid if at least one value is valid
+            }
+            else {
+                new_row[table_row.key] = null; // set to null if the value is not valid
             }
         });
-        // only return the row if at least one value is valid
-        return is_valid ? new_row : null;
+        return is_valid ? new_row : null; // only return the row if at least one value is valid
     })
         .filter(row => row !== null);
     cloned_datasource.year_min = Math.min(...cloned_datasource.content.map((d) => d.INDEX));
@@ -109,8 +111,8 @@ export function getRows(datasource, yearIndex) {
         // get the maximum number of decimals
         const decimals = (_b = row.decimals) !== null && _b !== void 0 ? _b : getMaxDecimals(all_values);
         new_values[row.key] = {
-            current: current_value,
-            previous: previous_value,
+            current: current_value !== null && current_value !== void 0 ? current_value : null,
+            previous: previous_value !== null && previous_value !== void 0 ? previous_value : null,
             label: (_c = row.label) !== null && _c !== void 0 ? _c : row.key,
             unit: (_d = row.unit) !== null && _d !== void 0 ? _d : null,
             icon: (_e = row.icon) !== null && _e !== void 0 ? _e : null,

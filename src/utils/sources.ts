@@ -109,12 +109,13 @@ export function getCompiledDatasource(
             typeof table_row.decimals === 'number'
               ? parseFloat((value as number).toFixed(table_row.decimals))
               : value
-          is_valid = true
+          is_valid = true // this row is valid if at least one value is valid
+        } else {
+          new_row[table_row.key] = null // set to null if the value is not valid
         }
       })
 
-      // only return the row if at least one value is valid
-      return is_valid ? new_row : null
+      return is_valid ? new_row : null // only return the row if at least one value is valid
     })
     .filter(row => row !== null)
 
@@ -171,8 +172,8 @@ export function getRows(
     const decimals = row.decimals ?? getMaxDecimals(all_values)
 
     new_values[row.key] = {
-      current: current_value,
-      previous: previous_value,
+      current: current_value ?? null,
+      previous: previous_value ?? null,
       label: row.label ?? row.key,
       unit: row.unit ?? null,
       icon: row.icon ?? null,

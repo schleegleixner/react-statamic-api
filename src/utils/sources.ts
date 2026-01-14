@@ -90,6 +90,7 @@ export function getCompiledDatasource(
 
         // sum up all keys
         keys.forEach(key => {
+          key = key.replace(/[€%‰]/g, '?') // replace invalid characters with ?
           const is_negative = key.startsWith('-')
           const effective_key = is_negative ? key.slice(1) : key
           const effective_multiplier = is_negative ? -multiplier : multiplier

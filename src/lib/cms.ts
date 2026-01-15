@@ -113,20 +113,22 @@ async function createPopulatedCollection(
       // url rewrites (add site_id in front)
       if (entry.url) {
         entry.site_id = site_id
-        // only apply if not starting with http
-        if (!entry.url.startsWith('http')) {
-          entry.full_url =
-            `/${site_id !== 'default' ? site_id : ''}/${entry.url}`.replace(
+
+        // construct the full URL
+        entry.full_url = entry.url.startsWith('http')
+          ? entry.url
+          : `/${site_id !== 'default' ? site_id : ''}/${entry.url}`.replace(
               /\/+/g,
               '/',
             )
-        }
+
         if (entry.parent) {
-          entry.parent.full_url =
-            `/${site_id !== 'default' ? site_id : ''}/${entry.parent.url}`.replace(
-              /\/+/g,
-              '/',
-            )
+          entry.parent.full_url = entry.parent.url.startsWith('http')
+            ? entry.parent.url
+            : `/${site_id !== 'default' ? site_id : ''}/${entry.parent.url}`.replace(
+                /\/+/g,
+                '/',
+              )
         }
       }
 

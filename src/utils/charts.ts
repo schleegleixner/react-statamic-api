@@ -1,81 +1,5 @@
 import { InputDataType } from '../types/tiles'
-
-// calculate a nice minimum for chart axes
-export const axisMinimum = (axisValues: { min: number; max: number }) => {
-  const realMin = axisValues.min
-  if (!isFinite(realMin) || realMin <= 0) {
-    return 0
-  }
-
-  const power = Math.floor(Math.log10(realMin))
-  const base = Math.pow(10, power)
-  const step = base
-  const withBuffer = realMin * 0.8
-  const niceMin = Math.floor(withBuffer / step) * step
-  return niceMin
-}
-
-// format axis values with dot as thousand separator
-export const axisFormatter = (value: number | string) => {
-  if (typeof value === 'number') {
-    if (value === 0) {
-      return ''
-    }
-    return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
-  }
-  return value
-}
-
-// calculate the trendline using linear regression
-export const calculateTrendline = (
-  data: [string, number][],
-): [number, number][] => {
-  const parseDate = (date: string | number): number => {
-    if (typeof date === 'number') {
-      return date
-    }
-    const asNumber = Number(date)
-    return !isNaN(asNumber) ? asNumber : new Date(date).getTime()
-  }
-
-  const isValidDataPoint = (item: unknown): item is [string | number, number] =>
-    Array.isArray(item) &&
-    item.length === 2 &&
-    !isNaN(parseDate(item[0])) &&
-    item[1] !== null &&
-    !isNaN(Number(item[1]))
-
-  // consolidate data points with the same x-value by aggregating their y-values
-  const merged: Record<string, number> = {}
-  data.filter(isValidDataPoint).forEach(([timestamp, value]) => {
-    merged[timestamp] = (merged[timestamp] || 0) + value
-  })
-
-  const points = Object.entries(merged).map(
-    ([timestamp, value]) => [parseDate(timestamp), value] as [number, number],
-  )
-
-  if (points.length === 0) {
-    return []
-  }
-
-  // calculate sums for linear regression in a single pass
-  const { sumX, sumY, sumXY, sumX2 } = points.reduce(
-    (acc, [x, y]) => ({
-      sumX: acc.sumX + x,
-      sumY: acc.sumY + y,
-      sumXY: acc.sumXY + x * y,
-      sumX2: acc.sumX2 + x * x,
-    }),
-    { sumX: 0, sumY: 0, sumXY: 0, sumX2: 0 },
-  )
-
-  const n = points.length
-  const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX)
-  const intercept = (sumY - slope * sumX) / n
-
-  return points.map(([x]) => [x, slope * x + intercept])
-}
+import type { SeriesOption } from 'echarts'
 
 // getSplitSeries splits the data into past/present and future series (only linechart)
 export const getSplitSeries = (
@@ -132,4 +56,81 @@ export const getSplitSeries = (
   })
 
   return { past_and_present, future }
+}
+
+// categorizeSeriesData categorizes the series data by the given timeline
+export const categorizeSeriesData = (
+  series: SeriesOption[],
+  timeline: number[],
+): SeriesOption[] => {
+  return series.map(serie => {
+    if (Array.isArray(serie.data)) {
+      const dataMap = new Map<number, number>()
+      serie.data.forEach((d: any) => {
+        if (Array.isArray(d) && d.length > 1) {
+          const year = new Date(d[0]).getFullYear()
+          dataMap.set(year, d[1])
+        }
+      })
+
+      return {
+        ...serie,
+        data: timeline.map(year => dataMap.get(year) ?? null),
+      } as SeriesOption
+    }
+    return serie
+  })
+}
+
+// calculate a nice minimum for chart axes
+export const axisMinimum = (axisValues: { min: number; max: number }) => {
+  const realMin = axisValues.min
+  if (!isFinite(realMin) || realMin <= 0) {
+    return 0
+  }
+
+  const power = Math.floor(Math.log10(realMin))
+  const base = Math.pow(10, power)
+  const step = base
+  const withBuffer = realMin * 0.8
+  const niceMin = Math.floor(withBuffer / step) * step
+  return niceMin
+}
+
+// format axis values with dot as thousand separator
+export const axisFormatter = (value: number | string) => {
+  if (typeof value === 'number') {
+    if (value === 0) {
+      return ''
+    }
+    return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  }
+  return value
+}
+
+// getFullTimeline returns the full timeline for the given start and end year
+export const getFullTimeline = (startYear: number, endYear: number) => {
+  const timeline: number[] = []
+  for (let year = startYear; year <= endYear; year++) {
+    timeline.push(year as unknown as number)
+  }
+  return timeline
+}
+
+// getTimelineFromSeries returns the timeline from the given series
+export const getTimelineFromSeries = (series: SeriesOption[]) => {
+  const timeline: number[] = []
+  series.forEach(serie => {
+    if (Array.isArray(serie.data)) {
+      serie.data.forEach((d: any) => {
+        if (Array.isArray(d) && d.length > 1) {
+          const year = new Date(d[0]).getFullYear()
+          if (!timeline.includes(year)) {
+            timeline.push(year)
+          }
+        }
+      })
+    }
+  })
+  return timeline.sort((a, b) => a - b)
 }

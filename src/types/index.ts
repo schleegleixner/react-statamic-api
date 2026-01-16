@@ -10,3 +10,5 @@ export {
 } from './tiles'
 
 export { BreadcrumbType, PageContentType, PageMappingType } from './pages'
+
+export { TooltipIndexType, TooltipDataType } from './tooltips'

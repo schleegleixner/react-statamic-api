@@ -26,9 +26,13 @@ export { darkenHexColor } from './colors'
 export {
   axisMinimum,
   axisFormatter,
-  calculateTrendline,
   getSplitSeries,
+  getFullTimeline,
+  getTimelineFromSeries,
+  categorizeSeriesData,
 } from './charts'
+export { calculateTrendline, getTrendlineSeries } from './trendline'
+export { parseTooltipParams } from './tooltip'
 export { convertToUnixTimestamp } from './convert'
 export { numberFormat } from './format'
 export { getGlobalString, getSiteId } from './translation'

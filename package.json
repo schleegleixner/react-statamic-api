@@ -1,6 +1,6 @@
 {
   "name": "@schleegleixner/react-statamic-api",
-  "version": "1.6.2",
+  "version": "1.6.3",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -30,6 +30,7 @@
     "@types/react-dom": "^19.1.6",
     "@typescript-eslint/eslint-plugin": "^8.43.0",
     "@typescript-eslint/parser": "^8.43.0",
+    "echarts": "^5.0.0",
     "eslint": "^9.35.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react": "^7.37.5",
@@ -51,6 +52,7 @@
     "unist-util-visit": "^5.0.0"
   },
   "peerDependencies": {
+    "echarts": "^5.0.0",
     "sharp": "^0.34.3"
   },
   "browser": {

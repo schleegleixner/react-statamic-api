@@ -18,6 +18,7 @@ export const parseTooltipParams = (
       self.findIndex((obj: any) => obj.seriesName === item.seriesName),
   )
 
+  let timestamp: string | number = ''
   let year: string | number = ''
   const seriesData: TooltipSeriesDataType[] = []
 
@@ -36,7 +37,8 @@ export const parseTooltipParams = (
 
     // extract year only once
     if (seen.size === 0) {
-      year = series.axisValue ?? new Date(series.value[0]).getFullYear()
+      timestamp = year = series.axisValue ?? series.value[0]
+      year = timestamp
 
       // convert timestamp to year if year is a valid timestamp (> 3000)
       if (typeof year === 'number' && year > 3000) {
@@ -72,6 +74,7 @@ export const parseTooltipParams = (
   }
 
   return {
+    timestamp,
     year,
     series: seriesData,
   }

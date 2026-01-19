@@ -12,6 +12,7 @@ export type TooltipSeriesDataType = {
 }
 
 export type TooltipDataType = {
+  timestamp: string | number
   year: string | number
   series: TooltipSeriesData[]
 }

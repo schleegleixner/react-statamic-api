@@ -5,6 +5,7 @@ export const parseTooltipParams = (params, indices) => {
     // filter duplicates by seriesName
     const uniqueParams = params.filter((item, index, self) => index ===
         self.findIndex((obj) => obj.seriesName === item.seriesName));
+    let timestamp = '';
     let year = '';
     const seriesData = [];
     for (const series of uniqueParams) {
@@ -18,7 +19,18 @@ export const parseTooltipParams = (params, indices) => {
         }
         // extract year only once
         if (seen.size === 0) {
-            year = (_a = series.axisValue) !== null && _a !== void 0 ? _a : new Date(series.value[0]).getFullYear();
+            timestamp = year = (_a = series.axisValue) !== null && _a !== void 0 ? _a : series.value[0];
+            year = timestamp;
+            // convert timestamp to year if year is a valid timestamp (> 3000)
+            if (typeof year === 'number' && year > 3000) {
+                // check if it's a timestamp in milliseconds (> 10^10) or seconds
+                if (year > 10000000000) {
+                    year = new Date(year).getFullYear();
+                }
+                else {
+                    year = new Date(year * 1000).getFullYear();
+                }
+            }
         }
         seen.add(seriesName);
         const value = Array.isArray(series.value) && series.value.length > 1
@@ -36,6 +48,7 @@ export const parseTooltipParams = (params, indices) => {
         return null;
     }
     return {
+        timestamp,
         year,
         series: seriesData,
     };

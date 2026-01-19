@@ -37,6 +37,16 @@ export const parseTooltipParams = (
     // extract year only once
     if (seen.size === 0) {
       year = series.axisValue ?? new Date(series.value[0]).getFullYear()
+
+      // convert timestamp to year if year is a valid timestamp (> 3000)
+      if (typeof year === 'number' && year > 3000) {
+        // check if it's a timestamp in milliseconds (> 10^10) or seconds
+        if (year > 10000000000) {
+          year = new Date(year).getFullYear()
+        } else {
+          year = new Date(year * 1000).getFullYear()
+        }
+      }
     }
 
     seen.add(seriesName)

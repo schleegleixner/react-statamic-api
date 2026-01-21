@@ -10,7 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import Papa from 'papaparse';
 import ExcelJS from 'exceljs';
 import fs from 'fs';
-import { sanitizeNumber } from './sanitize';
+import { sanitizeNumber, sanitizeString } from './sanitize';
 export function readCSV(file_path) {
     const file_data = fs.readFileSync(file_path, 'utf8');
     const delimiter = ';';
@@ -61,16 +61,6 @@ export function readExcel(file_path) {
         });
         return rows;
     });
-}
-function sanitizeString(str) {
-    if (typeof str !== 'string') {
-        return str;
-    }
-    return str
-        .normalize('NFKD') // fix (é -> e)
-        .replace(/[^\x00-\x7F]/g, '?') // replace everything non-ascii with ?
-        .replace(/[\uFFFD]/g, '?') // replace invalid characters with ?
-        .trim();
 }
 export function normalizeHeaders(data) {
     return data.map(entry => {

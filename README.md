@@ -6,6 +6,14 @@ NPM package to fetch content from the Statamic CMS API.
 
 Rename `.npmrc.example` to `.npmrc` and add a valid access token from Github.
 
+## Development
+
+```json
+"dependencies": {
+  "@schleegleixner/react-statamic-api": "file:../react-statamic-api"
+}
+```
+
 ## Compile
 
 To compile the typescript run `npm run build`.

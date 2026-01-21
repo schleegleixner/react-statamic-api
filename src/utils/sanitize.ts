@@ -8,6 +8,18 @@ export const sanitizeName = (name?: string | null): string => {
     .replace(/[^a-z0-9]/g, '')
 }
 
+export function sanitizeString(str: string): string {
+  if (typeof str !== 'string') {
+    return str
+  }
+  return str
+    .normalize('NFKD') // fix (é -> e)
+    .replace(/[^\x00-\x7F]/g, '?') // replace everything non-ascii with ?
+    .replace(/[\uFFFD]/g, '?') // replace invalid characters with ?
+    .replace(/[€%‰]/g, '?') // replace euro and percent/permille signs with ?
+    .trim()
+}
+
 export const sanitizeNumber = (
   value: string | number | null | undefined,
   default_value: any = NaN,

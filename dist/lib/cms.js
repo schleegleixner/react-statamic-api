@@ -16,6 +16,7 @@ import { getTimeline } from '../utils/sources';
 import { getCollection, getContent } from '../lib/content';
 import { revalidateContent } from './cache';
 import pLimit from 'p-limit';
+import { sanitizeString } from '../utils/sanitize';
 const temporary_folder = 'temp';
 export function fetchFromStatamic(sites) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -77,7 +78,7 @@ function createPopulatedCollection(collection_id_1) {
             return null;
         }
         yield Promise.all(collection.map((entry) => __awaiter(this, void 0, void 0, function* () {
-            var _a;
+            var _a, _b;
             // url rewrites (add site_id in front)
             if (entry.url) {
                 entry.site_id = site_id;
@@ -94,6 +95,18 @@ function createPopulatedCollection(collection_id_1) {
             // tiles
             if (entry.tile_id) {
                 entry.content = yield getContent(collection_id, entry.tile_id, temporary_folder);
+                if (Array.isArray(entry.content.datasources)) {
+                    entry.content.datasources.forEach((datasource) => {
+                        // sanitize columns
+                        if (Array.isArray(datasource.columns)) {
+                            datasource.columns = datasource.columns.map((column) => sanitizeString(column));
+                        }
+                        // sanitize table_rows keys
+                        if (Array.isArray(datasource.table_rows)) {
+                            datasource.table_rows = datasource.table_rows.map((row) => (Object.assign(Object.assign({}, row), { key: sanitizeString(row.key) })));
+                        }
+                    });
+                }
             }
             // pages
             if (collection_id === 'pages') {
@@ -106,6 +119,9 @@ function createPopulatedCollection(collection_id_1) {
                 entry.content = content;
                 entry.timeline = timeline;
                 entry.entry_count = (_a = timeline.length) !== null && _a !== void 0 ? _a : 0;
+                entry.columns = (_b = entry.columns) === null || _b === void 0 ? void 0 : _b.map((column) => {
+                    return sanitizeString(column);
+                });
             }
         })));
         yield writeContentCache(temporary_folder, 'collection', `${collection_id}.populated`, false, collection);
@@ -155,6 +171,8 @@ export function rebuildCache(sites) {
         if (!sites || sites.length === 0) {
             return [];
         }
+        // eslint-disable-next-line no-console
+        console.log('🔄 Rebuilding cache for sites:', sites);
         const results = yield Promise.all(sites.map((site) => __awaiter(this, void 0, void 0, function* () {
             const name = 'site::' + site;
             try {

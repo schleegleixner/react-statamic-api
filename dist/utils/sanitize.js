@@ -7,6 +7,17 @@ export const sanitizeName = (name) => {
         .replace(/\s+/g, '')
         .replace(/[^a-z0-9]/g, '');
 };
+export function sanitizeString(str) {
+    if (typeof str !== 'string') {
+        return str;
+    }
+    return str
+        .normalize('NFKD') // fix (é -> e)
+        .replace(/[^\x00-\x7F]/g, '?') // replace everything non-ascii with ?
+        .replace(/[\uFFFD]/g, '?') // replace invalid characters with ?
+        .replace(/[€%‰]/g, '?') // replace euro and percent/permille signs with ?
+        .trim();
+}
 export const sanitizeNumber = (value, default_value = NaN) => {
     if (value === null || value === undefined) {
         return default_value;

@@ -1,7 +1,7 @@
 import Papa from 'papaparse'
 import ExcelJS from 'exceljs'
 import fs from 'fs'
-import { sanitizeNumber } from './sanitize'
+import { sanitizeNumber, sanitizeString } from './sanitize'
 
 export type PayloadDataType = {
   [key: string]: string | number | null
@@ -67,17 +67,6 @@ export async function readExcel(file_path: string): Promise<PayloadDataType[]> {
   })
 
   return rows
-}
-
-function sanitizeString(str: string): string {
-  if (typeof str !== 'string') {
-    return str
-  }
-  return str
-    .normalize('NFKD') // fix (é -> e)
-    .replace(/[^\x00-\x7F]/g, '?') // replace everything non-ascii with ?
-    .replace(/[\uFFFD]/g, '?') // replace invalid characters with ?
-    .trim()
 }
 
 export function normalizeHeaders(data: PayloadDataType[]): PayloadDataType[] {

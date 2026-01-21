@@ -17,6 +17,7 @@ import { getCollection, getContent } from '../lib/content'
 import { RebuildResult, ResultType, StepResultType } from '../types/cms'
 import { revalidateContent } from './cache'
 import pLimit from 'p-limit'
+import { sanitizeString } from '../utils/sanitize'
 
 const temporary_folder = 'temp'
 
@@ -139,6 +140,23 @@ async function createPopulatedCollection(
           entry.tile_id,
           temporary_folder,
         )
+        if (Array.isArray(entry.content.datasources)) {
+          entry.content.datasources.forEach((datasource: any) => {
+            // sanitize columns
+            if (Array.isArray(datasource.columns)) {
+              datasource.columns = datasource.columns.map((column: any) =>
+                sanitizeString(column),
+              )
+            }
+            // sanitize table_rows keys
+            if (Array.isArray(datasource.table_rows)) {
+              datasource.table_rows = datasource.table_rows.map((row: any) => ({
+                ...row,
+                key: sanitizeString(row.key),
+              }))
+            }
+          })
+        }
       }
 
       // pages
@@ -153,6 +171,9 @@ async function createPopulatedCollection(
         entry.content = content
         entry.timeline = timeline
         entry.entry_count = timeline.length ?? 0
+        entry.columns = entry.columns?.map((column: any) => {
+          return sanitizeString(column)
+        })
       }
     }),
   )
@@ -222,6 +243,9 @@ export async function rebuildCache(sites: string[]): Promise<RebuildResult[]> {
   if (!sites || sites.length === 0) {
     return []
   }
+
+  // eslint-disable-next-line no-console
+  console.log('🔄 Rebuilding cache for sites:', sites)
 
   const results = await Promise.all(
     sites.map(async site => {

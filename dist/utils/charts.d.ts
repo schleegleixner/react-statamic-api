@@ -14,4 +14,4 @@ export declare const axisMinimum: (axisValues: {
 }) => number;
 export declare const axisFormatter: (value: number | string) => string;
 export declare const getFullTimeline: (startYear: number, endYear: number) => number[];
-export declare const getTimelineFromSeries: (series: SeriesOption[]) => number[];
+export declare const getTimelineFromSeries: (series: SeriesOption[], fill_gaps?: boolean) => number[];

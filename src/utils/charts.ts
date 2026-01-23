@@ -118,7 +118,7 @@ export const getFullTimeline = (startYear: number, endYear: number) => {
 }
 
 // getTimelineFromSeries returns the timeline from the given series
-export const getTimelineFromSeries = (series: SeriesOption[], fill_gaps: boolean = false) => {
+export const getTimelineFromSeries = (series: SeriesOption[], fill_gaps: boolean = true) => {
   const timeline: number[] = []
   series.forEach(serie => {
     if (Array.isArray(serie.data)) {

@@ -160,15 +160,16 @@ export async function getCompleteTileset(
 export async function getImageMeta(
   file_name: string,
   site_id?: string,
+  use_cache: boolean = true,
 ): Promise<ImageMetaInterface | false> {
   // check if the image is in the cache
-  let images = readLocalStorage(
+  let images = use_cache ? readLocalStorage(
     'collection.images',
     site_id,
-  ) as ImageMetaInterface[]
+  ) as ImageMetaInterface[] : null
 
   // if the image is not in the cache, get it from the collection
-  if (site_id === 'preview' || !images) {
+  if (!images) {
     images = (await getCollection('images', site_id)) as ImageMetaInterface[]
 
     if (images) {

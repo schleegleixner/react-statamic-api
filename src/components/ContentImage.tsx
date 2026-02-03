@@ -49,7 +49,11 @@ export default function ContentImage({
     const fetchMeta = async () => {
       const file_name = src.split('/').pop() || src
       try {
-        const result = await getImageMeta(file_name, active_site_id)
+        const result = await getImageMeta(
+          file_name,
+          active_site_id,
+          active_site_id !== 'preview',
+        )
         setMeta(result || false)
       } catch {
         setMeta(false)

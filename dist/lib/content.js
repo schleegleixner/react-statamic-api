@@ -109,12 +109,12 @@ export function getCompleteTileset() {
         return updated_collection;
     });
 }
-export function getImageMeta(file_name, site_id) {
-    return __awaiter(this, void 0, void 0, function* () {
+export function getImageMeta(file_name_1, site_id_1) {
+    return __awaiter(this, arguments, void 0, function* (file_name, site_id, use_cache = true) {
         // check if the image is in the cache
-        let images = readLocalStorage('collection.images', site_id);
+        let images = use_cache ? readLocalStorage('collection.images', site_id) : null;
         // if the image is not in the cache, get it from the collection
-        if (site_id === 'preview' || !images) {
+        if (!images) {
             images = (yield getCollection('images', site_id));
             if (images) {
                 writeLocalStorage('collection.images', images, 10, site_id); // cache for 10 minutes

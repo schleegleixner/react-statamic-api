@@ -32,7 +32,7 @@ export default function ContentImage({ src, site_id, alt = null, width = 1920, h
         const fetchMeta = () => __awaiter(this, void 0, void 0, function* () {
             const file_name = src.split('/').pop() || src;
             try {
-                const result = yield getImageMeta(file_name, active_site_id);
+                const result = yield getImageMeta(file_name, active_site_id, active_site_id !== 'preview');
                 setMeta(result || false);
             }
             catch (_a) {

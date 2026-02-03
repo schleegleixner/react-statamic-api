@@ -111,11 +111,13 @@ export function getCompleteTileset() {
 }
 export function getImageMeta(file_name, site_id) {
     return __awaiter(this, void 0, void 0, function* () {
+        // check if the image is in the cache
         let images = readLocalStorage('collection.images', site_id);
-        if (site_id !== 'preview' && !images) {
+        // if the image is not in the cache, get it from the collection
+        if (site_id === 'preview' || !images) {
             images = (yield getCollection('images', site_id));
             if (images) {
-                writeLocalStorage('collection.images', images, 60, site_id); // cache for 1 hour
+                writeLocalStorage('collection.images', images, 10, site_id); // cache for 10 minutes
             }
         }
         if (!images || images.length === 0) {

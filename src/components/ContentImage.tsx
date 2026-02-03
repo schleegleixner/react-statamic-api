@@ -94,7 +94,7 @@ export default function ContentImage({
     return (
       <span className="flex h-full w-full items-center justify-center">
         <span className="rounded border-2 border-secondary p-3 text-center font-bold text-secondary">
-          Unbekanntes Bild: {src}
+          Unbekanntes Bild: {src} ({active_site_id})
         </span>
       </span>
     )

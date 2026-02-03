@@ -62,7 +62,10 @@ export default function ContentImage({ src, site_id, alt = null, width = 1920, h
         return (React.createElement("span", { className: "flex h-full w-full items-center justify-center" },
             React.createElement("span", { className: "rounded border-2 border-secondary p-3 text-center font-bold text-secondary" },
                 "Unbekanntes Bild: ",
-                src)));
+                src,
+                " (",
+                active_site_id,
+                ")")));
     }
     if (file_path === null) {
         return (React.createElement("span", { className: "flex h-full w-full items-center justify-center" },

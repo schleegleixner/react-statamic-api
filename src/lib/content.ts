@@ -161,16 +161,18 @@ export async function getImageMeta(
   file_name: string,
   site_id?: string,
 ): Promise<ImageMetaInterface | false> {
+  // check if the image is in the cache
   let images = readLocalStorage(
     'collection.images',
     site_id,
   ) as ImageMetaInterface[]
 
-  if (site_id !== 'preview' && !images) {
+  // if the image is not in the cache, get it from the collection
+  if (site_id === 'preview' || !images) {
     images = (await getCollection('images', site_id)) as ImageMetaInterface[]
 
     if (images) {
-      writeLocalStorage('collection.images', images, 60, site_id) // cache for 1 hour
+      writeLocalStorage('collection.images', images, 10, site_id) // cache for 10 minutes
     }
   }
 

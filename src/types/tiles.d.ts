@@ -16,6 +16,7 @@ export type TileDatapointType = {
 
 export type TableRowType = {
   key: string
+  key_id?: number | null
   label: string | null
   unit?: string | null
   multiplier?: number | null

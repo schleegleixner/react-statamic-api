@@ -112,7 +112,7 @@ export function getCompleteTileset() {
 export function getImageMeta(file_name, site_id) {
     return __awaiter(this, void 0, void 0, function* () {
         let images = readLocalStorage('collection.images', site_id);
-        if (!images) {
+        if (site_id !== 'preview' && !images) {
             images = (yield getCollection('images', site_id));
             if (images) {
                 writeLocalStorage('collection.images', images, 60, site_id); // cache for 1 hour

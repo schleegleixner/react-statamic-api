@@ -165,8 +165,10 @@ export async function getImageMeta(
     'collection.images',
     site_id,
   ) as ImageMetaInterface[]
-  if (!images) {
+
+  if (site_id !== 'preview' && !images) {
     images = (await getCollection('images', site_id)) as ImageMetaInterface[]
+
     if (images) {
       writeLocalStorage('collection.images', images, 60, site_id) // cache for 1 hour
     }

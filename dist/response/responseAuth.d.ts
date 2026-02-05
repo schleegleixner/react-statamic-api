@@ -1,1 +1,2 @@
-export default function responseAuth(req: Request): Promise<Response>;
+import { NextRequest } from 'next/server';
+export default function responseAuth(req: NextRequest): Promise<Response>;

@@ -1,23 +1,31 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
-export default async function responseAuth(req: Request): Promise<Response> {
+export default async function responseAuth(req: NextRequest): Promise<Response> {
   const { password } = await req.json()
+  const host = req.headers.get('host') || 'localhost:3000'
+  const is_secure = !host.includes('localhost') && !host.includes('127.0.0.1')
+  const is_iframe = req.headers.get('Sec-Fetch-Dest') === 'iframe'
+  const is_insecure_iframe = is_iframe && !is_secure
 
   if (password === process.env.PASSWORD) {
-    const response = new NextResponse(JSON.stringify({ success: true }), {
-      status: 200,
+    const response = NextResponse.json({
+      success: true,
+      skipCookie: is_insecure_iframe  // skip it
     })
-    response.cookies.set('site_auth', password, {
-      path: '/',
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-    })
+
+    // set cookie only if it works
+    if (!is_insecure_iframe) {
+      response.cookies.set('site_auth', password, {
+        path: '/',
+        httpOnly: true,
+        secure: is_secure,
+        sameSite: is_secure ? 'none' : 'lax',
+        maxAge: 60 * 60 * 24 * 7,
+      })
+    }
+
     return response
   }
 
-  return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-    status: 401,
-  })
+  return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 }

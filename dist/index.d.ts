@@ -5,3 +5,4 @@ export * from './hooks';
 export * from './response';
 export * from './types';
 export * from './utils';
+export * from './routing';

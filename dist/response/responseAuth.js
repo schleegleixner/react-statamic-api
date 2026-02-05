@@ -18,9 +18,8 @@ export default function responseAuth(req) {
         if (password === process.env.PASSWORD) {
             const response = NextResponse.json({
                 success: true,
-                skipCookie: is_insecure_iframe // skip it
+                skipCookie: is_insecure_iframe
             });
-            // set cookie only if it works
             if (!is_insecure_iframe) {
                 response.cookies.set('site_auth', password, {
                     path: '/',

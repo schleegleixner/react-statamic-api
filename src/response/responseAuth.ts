@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-export default async function responseAuth(req: NextRequest): Promise<Response> {
+export default async function responseAuth(req: Request | NextRequest): Promise<Response> {
   const { password } = await req.json()
   const host = req.headers.get('host') || 'localhost:3000'
   const is_secure = !host.includes('localhost') && !host.includes('127.0.0.1')
@@ -10,10 +10,9 @@ export default async function responseAuth(req: NextRequest): Promise<Response> 
   if (password === process.env.PASSWORD) {
     const response = NextResponse.json({
       success: true,
-      skipCookie: is_insecure_iframe  // skip it
+      skipCookie: is_insecure_iframe
     })
 
-    // set cookie only if it works
     if (!is_insecure_iframe) {
       response.cookies.set('site_auth', password, {
         path: '/',

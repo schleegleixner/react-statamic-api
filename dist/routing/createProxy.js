@@ -20,10 +20,6 @@ export default function createProxy(config = {}) {
         if (pathname.includes('.')) {
             return NextResponse.next();
         }
-        if (pathname.startsWith('/api')) {
-            console.log('🚨 API request landed in proxy:', pathname);
-            return NextResponse.next();
-        }
         const url = request.nextUrl.clone();
         const password = url.searchParams.get('password');
         const existing_auth = (_a = request.cookies.get('site_auth')) === null || _a === void 0 ? void 0 : _a.value;

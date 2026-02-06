@@ -50,8 +50,8 @@ export async function fetchFromStatamic(sites: string[]): Promise<ResultType> {
 
   const overall_success = results.every(step => step.success)
   const message = overall_success
-    ? 'Success! Cache has been flushed and rebuilt.'
-    : 'Some steps failed. Check the results for more information.'
+    ? `Success! Cache has been flushed and rebuilt. CMS target URL: ${getCMSEndpoint()}`
+    : `Some steps failed. Check the results for more information. CMS target URL: ${getCMSEndpoint()}`
 
   return { message, results, success: overall_success }
 }
@@ -119,17 +119,17 @@ async function createPopulatedCollection(
         entry.full_url = entry.url.startsWith('http')
           ? entry.url
           : `/${site_id !== 'default' ? site_id : ''}/${entry.url}`.replace(
-              /\/+/g,
-              '/',
-            )
+            /\/+/g,
+            '/',
+          )
 
         if (entry.parent) {
           entry.parent.full_url = entry.parent.url.startsWith('http')
             ? entry.parent.url
             : `/${site_id !== 'default' ? site_id : ''}/${entry.parent.url}`.replace(
-                /\/+/g,
-                '/',
-              )
+              /\/+/g,
+              '/',
+            )
         }
       }
 
@@ -295,24 +295,24 @@ async function fetchForSite(site_id: string) {
   const tasks_content: Promise<any>[] = []
   const tasks_files: Promise<any>[] = []
 
-  ;(data.tiles ?? []).forEach((tile: { tile_id: string }) =>
-    tasks_content.push(
-      limit(() =>
-        fetchContent(site_id, 'tile', tile.tile_id).then(r =>
-          results.push({ name: 'tile::' + tile.tile_id, success: !!r }),
+    ; (data.tiles ?? []).forEach((tile: { tile_id: string }) =>
+      tasks_content.push(
+        limit(() =>
+          fetchContent(site_id, 'tile', tile.tile_id).then(r =>
+            results.push({ name: 'tile::' + tile.tile_id, success: !!r }),
+          ),
         ),
       ),
-    ),
-  )
-  ;(data.pages ?? []).forEach((page: { slug: string }) =>
-    tasks_content.push(
-      limit(() =>
-        fetchContent(site_id, 'page', page.slug).then(r =>
-          results.push({ name: 'page::' + page.slug, success: !!r }),
+    )
+    ; (data.pages ?? []).forEach((page: { slug: string }) =>
+      tasks_content.push(
+        limit(() =>
+          fetchContent(site_id, 'page', page.slug).then(r =>
+            results.push({ name: 'page::' + page.slug, success: !!r }),
+          ),
         ),
       ),
-    ),
-  )
+    )
 
   taxonomies.forEach(t =>
     tasks_content.push(
@@ -334,31 +334,31 @@ async function fetchForSite(site_id: string) {
     ),
   )
 
-  // only download images and sources for the default site
-  ;(data.images ?? []).forEach((image: { url: string; file_name: string }) =>
-    tasks_files.push(
-      limit(() =>
-        downloadFile(site_id, image.url, 'images').then(r =>
-          results.push({
-            name: 'image::' + image.file_name,
-            success: r !== null,
-          }),
+    // only download images and sources for the default site
+    ; (data.images ?? []).forEach((image: { url: string; file_name: string }) =>
+      tasks_files.push(
+        limit(() =>
+          downloadFile(site_id, image.url, 'images').then(r =>
+            results.push({
+              name: 'image::' + image.file_name,
+              success: r !== null,
+            }),
+          ),
         ),
       ),
-    ),
-  )
-  ;(data.sources ?? []).forEach((source: { url: string; file_name: string }) =>
-    tasks_files.push(
-      limit(() =>
-        downloadFile(site_id, source.url, 'source').then(r =>
-          results.push({
-            name: 'source::' + source.file_name,
-            success: r !== null,
-          }),
+    )
+    ; (data.sources ?? []).forEach((source: { url: string; file_name: string }) =>
+      tasks_files.push(
+        limit(() =>
+          downloadFile(site_id, source.url, 'source').then(r =>
+            results.push({
+              name: 'source::' + source.file_name,
+              success: r !== null,
+            }),
+          ),
         ),
       ),
-    ),
-  )
+    )
 
   // eslint-disable-next-line no-console
   console.log(

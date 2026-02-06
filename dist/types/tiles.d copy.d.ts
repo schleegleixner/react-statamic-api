@@ -1,0 +1,91 @@
+export type InputDataType = {
+    [key: string]: number | null;
+};
+export type TileTypePrefix = string;
+export type TileType = `${TileTypePrefix}-${string}` | string;
+export type TileStringType = {
+    [key: string]: string;
+};
+export type TileDatapointType = {
+    id: string;
+    val: number;
+};
+export type TableRowType = {
+    key: string;
+    key_id?: number | null;
+    label: string | null;
+    unit?: string | null;
+    multiplier?: number | null;
+    visible?: boolean | null;
+    variant?: string | null;
+    icon?: string | null;
+    decimals?: number | null;
+    divider?: boolean | null;
+    hide_trend?: boolean | null;
+};
+export type TileDatasourceType = {
+    file_name: string;
+    label: string | null;
+    labely: string | null;
+    table_rows: TableRowType[] | null;
+    content: InputDataType[];
+    timeline: number[];
+    entry_count: number;
+    allow_download: boolean;
+    year_min?: number;
+    year_max?: number;
+};
+export interface TilePayloadType {
+    tile_id: string;
+    subtitle: string | null;
+    title: string | null;
+    copy: string | ReactElement<any, string | JSXElementConstructor<any>> | null;
+    details: string;
+    legend: string | null;
+    retrieval: string | null;
+    source: string | null;
+    strings: TileStringType[] | null;
+    datapoints: TileDatapointType[] | null;
+    layout: string | null;
+    tile_type: string | null;
+    tags: {
+        category: string;
+        action_dimension: string;
+        action_field: string;
+        sdg_targets: [string];
+    };
+    live: boolean | null;
+    search: string;
+    table_keys: string[] | null;
+    icon: string | null;
+    datasources: TileDatasourceType[] | null;
+    highlight: boolean | null;
+    diagram_type: string | null;
+    [key: string]: any;
+}
+export interface TileProps {
+    type: TileType;
+    tile_payload: TilePayloadType;
+}
+export type TileDataType = {
+    tile_id: string;
+    title: string;
+    layout: 'default' | 'full';
+    tags: {
+        category: string;
+        action_dimension: string;
+        action_field: string;
+        sdg_targets: [string];
+    };
+    search: string;
+    content?: TilePayloadType;
+};
+export type SdgTargetType = {
+    id: string;
+    slug: string;
+    data: {
+        title: string;
+        number: number;
+        copy: string;
+    };
+};

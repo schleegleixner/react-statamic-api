@@ -6,6 +6,7 @@ export const getSplitSeries = (
   data: InputDataType[],
   property: keyof InputDataType,
   split_future: boolean = true,
+  current_year: number | null = null
 ) => {
   const aggregated_data: Record<string, number | null> = {}
 
@@ -24,7 +25,7 @@ export const getSplitSeries = (
     aggregated_data[year] = value
   })
 
-  const current_year = new Date().getFullYear()
+  current_year = current_year ?? new Date().getFullYear()
   const sorted_years = Object.keys(aggregated_data).sort()
   const past_and_present: [number, number | null][] = []
   const future: { value: [number, number | null]; symbolSize: number }[] = []
@@ -62,23 +63,54 @@ export const getSplitSeries = (
 export const categorizeSeriesData = (
   series: SeriesOption[],
   timeline: number[],
+  split: boolean = false,
+  current_year: number | null = null
 ): SeriesOption[] => {
-  return series.map(serie => {
-    if (Array.isArray(serie.data)) {
-      const dataMap = new Map<number, number>()
-      serie.data.forEach((d: any) => {
-        if (Array.isArray(d) && d.length > 1) {
-          const year = new Date(d[0]).getFullYear()
-          dataMap.set(year, d[1])
-        }
-      })
+  const actual_year = current_year ?? new Date().getFullYear()
 
-      return {
-        ...serie,
-        data: timeline.map(year => dataMap.get(year) ?? null),
-      } as SeriesOption
+  return series.flatMap(serie => {
+    if (!Array.isArray(serie.data)) { return serie }
+
+    const data_map = new Map<number, number>()
+    serie.data.forEach((d: any) => {
+      if (Array.isArray(d) && d.length > 1) {
+        const year = new Date(d[0]).getFullYear()
+        data_map.set(year, d[1])
+      }
+    })
+
+    const categorized_data = timeline.map(year => data_map.get(year) ?? null)
+
+    if (!split) {
+      return { ...serie, data: categorized_data } as SeriesOption
     }
-    return serie
+
+    const past_data = timeline.map((year, i) =>
+      year <= actual_year ? categorized_data[i] : null
+    )
+    const future_data = timeline.map((year, i) => {
+      if (year >= actual_year) { return categorized_data[i] }
+      return null
+    })
+
+    const base_id = (serie as any).id ?? serie.name ?? 'series'
+
+    return [
+      {
+        ...serie,
+        id: `${base_id}-past`,
+        data: past_data
+      } as SeriesOption,
+      {
+        ...serie,
+        id: `${base_id}-future`,  // <- Das ist der Fix!
+        name: serie.name,
+        data: future_data,
+        lineStyle: { type: 'dashed' },
+        showSymbol: true,
+        symbolSize: 7,
+      } as SeriesOption,
+    ]
   })
 }
 

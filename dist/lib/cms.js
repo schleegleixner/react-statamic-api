@@ -43,8 +43,8 @@ export function fetchFromStatamic(sites) {
         }
         const overall_success = results.every(step => step.success);
         const message = overall_success
-            ? 'Success! Cache has been flushed and rebuilt.'
-            : 'Some steps failed. Check the results for more information.';
+            ? `Success! Cache has been flushed and rebuilt. CMS target URL: ${getCMSEndpoint()}`
+            : `Some steps failed. Check the results for more information. CMS target URL: ${getCMSEndpoint()}`;
         return { message, results, success: overall_success };
     });
 }

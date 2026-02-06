@@ -9,40 +9,51 @@ export const parseTooltipParams = (
   params: any,
   indices: Record<string, TooltipIndexType>,
 ): TooltipDataType | null => {
-  const seen = new Set<string>()
+  // Dedupe by seriesName, prefer items with actual values
+  const seen_names = new Map<string, any>()
 
-  // filter duplicates by seriesName
-  const uniqueParams = params.filter(
-    (item: any, index: number, self: any[]) =>
-      index ===
-      self.findIndex((obj: any) => obj.seriesName === item.seriesName),
-  )
+  for (const item of params) {
+    const existing = seen_names.get(item.seriesName)
+
+    if (!existing) {
+      seen_names.set(item.seriesName, item)
+      continue
+    }
+
+    // Prefer the item with an actual value over null
+    const has_value = item.value !== null && item.value !== undefined
+    const existing_has_value = existing.value !== null && existing.value !== undefined
+
+    if (has_value && !existing_has_value) {
+      seen_names.set(item.seriesName, item)
+    }
+  }
+
+  const unique_params = Array.from(seen_names.values())
 
   let timestamp: string | number = ''
   let year: string | number = ''
-  const seriesData: TooltipSeriesDataType[] = []
+  const series_data: TooltipSeriesDataType[] = []
+  const seen = new Set<string>()
 
-  for (const series of uniqueParams) {
-    const seriesName = series.seriesName
+  for (const series of unique_params) {
+    const series_name = series.seriesName
 
     if (
       series.value === null ||
       series.value === undefined ||
-      seen.has(seriesName) ||
-      seriesName.toLowerCase() === 'trend' ||
-      seriesName.toLowerCase() === 'trendline'
+      seen.has(series_name) ||
+      series_name.toLowerCase() === 'trend' ||
+      series_name.toLowerCase() === 'trendline'
     ) {
       continue
     }
 
-    // extract year only once
     if (seen.size === 0) {
       timestamp = year = series.axisValue ?? series.value[0]
       year = timestamp
 
-      // convert timestamp to year if year is a valid timestamp (> 3000)
       if (typeof year === 'number' && year > 3000) {
-        // check if it's a timestamp in milliseconds (> 10^10) or seconds
         if (year > 10000000000) {
           year = new Date(year).getFullYear()
         } else {
@@ -51,7 +62,7 @@ export const parseTooltipParams = (
       }
     }
 
-    seen.add(seriesName)
+    seen.add(series_name)
 
     const value =
       Array.isArray(series.value) && series.value.length > 1
@@ -59,23 +70,23 @@ export const parseTooltipParams = (
         : series.value.toLocaleString('de-DE')
 
     const unit =
-      Object.values(indices).find(i => i.title === seriesName)?.unit ?? ''
+      Object.values(indices).find(i => i.title === series_name)?.unit ?? ''
 
-    seriesData.push({
-      label: seriesName,
+    series_data.push({
+      label: series_name,
       value,
       unit,
       marker: series.marker,
     })
   }
 
-  if (seriesData.length === 0) {
+  if (series_data.length === 0) {
     return null
   }
 
   return {
     timestamp,
     year,
-    series: seriesData,
+    series: series_data,
   }
 }

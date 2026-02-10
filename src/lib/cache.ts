@@ -1,7 +1,12 @@
 import * as fs from 'fs'
+import https from 'https'
 import path from 'path'
 import { getCachedFilePath } from '../utils/filesystem'
 import { getCacheEndpoint } from '../utils/api'
+
+const insecure_agent = new https.Agent({
+  rejectUnauthorized: false,
+})
 
 // read the data from the cache
 export async function readCache(
@@ -16,7 +21,8 @@ export async function readCache(
     `?site_id=${site_id}&content_type=${content_type}&folder=${folder}&id=${id}&ignore_stale=${ignore_stale}`
 
   try {
-    const response = await fetch(endpoint, { next: { tags: ['cached_data'] } })
+    // @ts-expect-error -- agent is not part of the native fetch types but supported in Node.js
+    const response = await fetch(endpoint, { next: { tags: ['cached_data'] }, agent: insecure_agent })
 
     if (response.status !== 200) {
       // eslint-disable-next-line no-console
@@ -158,6 +164,8 @@ export async function revalidateContent(): Promise<{
       headers: {
         'Content-Type': 'application/json',
       },
+      // @ts-expect-error -- agent is not part of the native fetch types but supported in Node.js
+      agent: insecure_agent,
     })
 
     if (!response.ok) {

@@ -53,9 +53,10 @@ export const categorizeSeriesData = (series, timeline, split = false, current_ye
         }
         const data_map = new Map();
         serie.data.forEach((d) => {
-            if (Array.isArray(d) && d.length > 1) {
-                const year = new Date(d[0]).getFullYear();
-                data_map.set(year, d[1]);
+            const data = Array.isArray(d) ? d : d.value;
+            if (Array.isArray(data) && data.length > 1) {
+                const year = new Date(data[0]).getFullYear();
+                data_map.set(year, data[1]);
             }
         });
         const categorized_data = timeline.map(year => { var _a; return (_a = data_map.get(year)) !== null && _a !== void 0 ? _a : null; });
@@ -113,8 +114,9 @@ export const getTimelineFromSeries = (series, fill_gaps = true) => {
     series.forEach(serie => {
         if (Array.isArray(serie.data)) {
             serie.data.forEach((d) => {
-                if (Array.isArray(d) && d.length > 1) {
-                    const year = new Date(d[0]).getFullYear();
+                const data = Array.isArray(d) ? d : d.value;
+                if (Array.isArray(data) && data.length > 1) {
+                    const year = new Date(data[0]).getFullYear();
                     if (!timeline.includes(year)) {
                         timeline.push(year);
                     }

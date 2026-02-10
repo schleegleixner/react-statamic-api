@@ -72,10 +72,11 @@ export const categorizeSeriesData = (
     if (!Array.isArray(serie.data)) { return serie }
 
     const data_map = new Map<number, number>()
-    serie.data.forEach((d: any) => {
-      if (Array.isArray(d) && d.length > 1) {
-        const year = new Date(d[0]).getFullYear()
-        data_map.set(year, d[1])
+    serie.data.forEach((d: number | [number, number]) => {
+      const data = Array.isArray(d) ? d : (d as any).value
+      if (Array.isArray(data) && data.length > 1) {
+        const year = new Date(data[0]).getFullYear()
+        data_map.set(year, data[1])
       }
     })
 
@@ -103,7 +104,7 @@ export const categorizeSeriesData = (
       } as SeriesOption,
       {
         ...serie,
-        id: `${base_id}-future`,  // <- Das ist der Fix!
+        id: `${base_id}-future`,
         name: serie.name,
         data: future_data,
         lineStyle: { type: 'dashed' },
@@ -155,8 +156,9 @@ export const getTimelineFromSeries = (series: SeriesOption[], fill_gaps: boolean
   series.forEach(serie => {
     if (Array.isArray(serie.data)) {
       serie.data.forEach((d: any) => {
-        if (Array.isArray(d) && d.length > 1) {
-          const year = new Date(d[0]).getFullYear()
+        const data = Array.isArray(d) ? d : d.value
+        if (Array.isArray(data) && data.length > 1) {
+          const year = new Date(data[0]).getFullYear()
           if (!timeline.includes(year)) {
             timeline.push(year)
           }

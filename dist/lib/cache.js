@@ -8,9 +8,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import * as fs from 'fs';
+import https from 'https';
 import path from 'path';
 import { getCachedFilePath } from '../utils/filesystem';
 import { getCacheEndpoint } from '../utils/api';
+const insecure_agent = new https.Agent({
+    rejectUnauthorized: false,
+});
 // read the data from the cache
 export function readCache() {
     return __awaiter(this, arguments, void 0, function* (site_id = 'default', content_type, folder = false, id = false, ignore_stale = false) {
@@ -18,7 +22,8 @@ export function readCache() {
         const endpoint = getCacheEndpoint('cache') +
             `?site_id=${site_id}&content_type=${content_type}&folder=${folder}&id=${id}&ignore_stale=${ignore_stale}`;
         try {
-            const response = yield fetch(endpoint, { next: { tags: ['cached_data'] } });
+            // @ts-expect-error -- agent is not part of the native fetch types but supported in Node.js
+            const response = yield fetch(endpoint, { next: { tags: ['cached_data'] }, agent: insecure_agent });
             if (response.status !== 200) {
                 // eslint-disable-next-line no-console
                 console.error(`🚫 Cache read error at endpoint: ${endpoint} - Status: ${response.status}`);
@@ -123,6 +128,8 @@ export function revalidateContent() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                // @ts-expect-error -- agent is not part of the native fetch types but supported in Node.js
+                agent: insecure_agent,
             });
             if (!response.ok) {
                 return {

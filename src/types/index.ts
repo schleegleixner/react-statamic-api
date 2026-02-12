@@ -6,6 +6,8 @@ export {
   TileDataType,
   TilePayloadType,
   TileProps,
+  PayloadDataType,
+  TileStringType,
   TileType,
 } from './tiles'
 

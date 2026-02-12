@@ -1,56 +1,88 @@
 import {
   TileDatasourceType,
   TilePayloadType,
-  TileStringType,
 } from '../types/tiles'
+import { castValue } from './convert'
 
-export type PayloadDataType = {
-  [key: string]: string
+export function getValue(
+  tile_payload: TilePayloadType,
+  key: string,
+  fallback: string | number | boolean | null = null,
+  attribute: string
+): string | number | boolean | null {
+  const value =
+    tile_payload[attribute]?.find(
+      (val: { id: string; val: string | number | boolean }) => val.id === key,
+    ) || null
+
+  if (value) {
+    return castValue(value.val)
+  }
+
+  return fallback
+}
+
+export function getValues(
+  tile_payload: TilePayloadType,
+  defaults: { [key: string]: number | boolean | string | null } = {},
+  attribute: string
+): { [key: string]: number | boolean | string | null } {
+  const values = tile_payload[attribute] ?? {}
+  const casted = Object.fromEntries(
+    Object.entries(values).map(([key, val]) => [key, castValue(val)]),
+  )
+  return { ...defaults, ...casted }
 }
 
 export function getDataPoint(
   tile_payload: TilePayloadType,
   key: string,
-  fallback: number = 0,
-): number {
-  const datapoint =
-    tile_payload.datapoints?.find(
-      (datapoint: { id: string; val: number }) => datapoint.id === key,
-    ) || null
+  fallback: number | boolean | null = null,
+): number | boolean | null {
+  const result = getValue(tile_payload, key, fallback, 'datapoints')
+  return result as number | boolean | null
+}
 
-  if (datapoint) {
-    return datapoint.val
-  }
+export function getDatapoints(
+  tile_payload: TilePayloadType,
+  defaults: { [key: string]: number } = {},
+): { [key: string]: number | boolean | null } {
+  const result = getValues(tile_payload, defaults, 'datapoints')
+  return result as { [key: string]: number | boolean | null }
+}
 
-  return fallback
+export function getSetting<T extends Record<string, any>>(
+  tile_payload: TilePayloadType,
+  key: string,
+  fallback: string | number | boolean | null = null,
+): T | null {
+  const result = getValue(tile_payload, key, fallback, 'settings')
+  return result as T | null
+}
+
+export function getSettings<T extends Record<string, any>>(
+  tile_payload: TilePayloadType,
+  defaults: T = {} as T,
+): T {
+  const result = getValues(tile_payload, defaults, 'settings')
+  return result as T
 }
 
 export function getString(
   tile_payload: TilePayloadType,
   key: string,
-  fallback: string = '',
+  fallback: string = ''
 ): string {
-  const string = tile_payload.strings?.find(string => string.id === key) || null
-
-  if (string) {
-    return string.val
-  }
-
-  return fallback
+  const result = getValue(tile_payload, key, fallback, 'strings')
+  return result as string
 }
 
-export function getAllStrings(tile_payload: TilePayloadType): PayloadDataType {
-  return (
-    tile_payload.strings?.reduce(
-      (result: PayloadDataType, item: TileStringType) => {
-        if (item.id && item.val) {
-          result[item.id] = item.val
-        }
-        return result
-      },
-      {},
-    ) || {}
-  )
+export function getStrings(
+  tile_payload: TilePayloadType,
+  defaults: { [key: string]: string } = {},
+): { [key: string]: string } {
+  const result = getValues(tile_payload, defaults, 'strings')
+  return result as { [key: string]: string }
 }
 
 export function getDataSource(
@@ -79,29 +111,10 @@ export function getDataSource(
   return null
 }
 
-export function getSource(
+export function getDataSourceContent(
   tile_payload: TilePayloadType,
   find: string | number | boolean = true,
   fallback: any = null,
 ): any | null {
-  const datasources = tile_payload.datasources
-  if (!Array.isArray(datasources) || datasources.length === 0) {
-    return fallback
-  }
-
-  // get first datasource if find is true
-  if (find === true) {
-    return datasources[0]?.content ?? fallback
-  }
-
-  if (typeof find === 'number') {
-    return datasources[find]?.content ?? fallback
-  }
-
-  if (typeof find === 'string') {
-    const found = datasources.find(entry => entry.file_name === find)
-    return found ? found.content : fallback
-  }
-
-  return fallback
+  return getDataSource(tile_payload, find)?.content ?? fallback
 }

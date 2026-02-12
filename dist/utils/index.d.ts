@@ -1,12 +1,12 @@
 export { getTimeline, getCompiledDatasource, getRows, RowDataType, RowDataCollection, getDatasetByKey, getDatasetByIndex, } from './sources';
-export { getDataPoint, getAllStrings, getDataSource, getSource, getString, } from './payload';
+export { getValue, getValues, getDataPoint, getDatapoints, getSetting, getSettings, getString, getStrings, getDataSource, getDataSourceContent, } from './payload';
 export { sanitizeName, sanitizeNumber, replaceContentTags } from './sanitize';
 export { findPageByIdOrSlug, getCurrentPageServer, getPageTitleServer, setPageTitle, getTileTitle, } from './content';
 export { darkenHexColor } from './colors';
 export { axisMinimum, axisFormatter, getSplitSeries, getFullTimeline, getTimelineFromSeries, categorizeSeriesData, } from './charts';
 export { calculateTrendline, getTrendlineSeries } from './trendline';
 export { parseTooltipParams } from './tooltip';
-export { convertToUnixTimestamp } from './convert';
+export { castValue, convertToUnixTimestamp } from './convert';
 export { numberFormat } from './format';
 export { getGlobalString, getSiteId } from './translation';
 export { isAuthenticated } from './auth';

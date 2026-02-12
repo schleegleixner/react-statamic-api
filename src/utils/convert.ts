@@ -1,3 +1,21 @@
+// Cast string values to their primitive type (number, boolean) if possible
+export function castValue(value: any): any {
+  if (typeof value !== 'string') {
+    return value
+  }
+  if (value === 'true') {
+    return true
+  }
+  if (value === 'false') {
+    return false
+  }
+  const num = Number(value)
+  if (value !== '' && !isNaN(num)) {
+    return num
+  }
+  return value
+}
+
 // Convert date strings like "Jan 24" or "2024" to Unix timestamps
 export const convertToUnixTimestamp = (dateStr: string | undefined): number => {
   const monthMap: { [key: string]: number } = {

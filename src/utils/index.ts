@@ -8,11 +8,16 @@ export {
   getDatasetByIndex,
 } from './sources'
 export {
+  getValue,
+  getValues,
   getDataPoint,
-  getAllStrings,
-  getDataSource,
-  getSource,
+  getDatapoints,
+  getSetting,
+  getSettings,
   getString,
+  getStrings,
+  getDataSource,
+  getDataSourceContent,
 } from './payload'
 export { sanitizeName, sanitizeNumber, replaceContentTags } from './sanitize'
 export {
@@ -33,7 +38,7 @@ export {
 } from './charts'
 export { calculateTrendline, getTrendlineSeries } from './trendline'
 export { parseTooltipParams } from './tooltip'
-export { convertToUnixTimestamp } from './convert'
+export { castValue, convertToUnixTimestamp } from './convert'
 export { numberFormat } from './format'
 export { getGlobalString, getSiteId } from './translation'
 export { isAuthenticated } from './auth'

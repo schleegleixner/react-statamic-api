@@ -9,6 +9,8 @@ export type TileStringType = {
   [key: string]: string
 }
 
+export type PayloadDataType = TileStringType
+
 export type TileDatapointType = {
   id: string
   val: number
@@ -51,6 +53,7 @@ export interface TilePayloadType {
   retrieval: string | null
   source: string | null
   strings: TileStringType[] | null
+  settings: TileStringType[] | null
   datapoints: TileDatapointType[] | null
   layout: string | null
   tile_type: string | null

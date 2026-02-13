@@ -13,15 +13,16 @@ import {
 } from '../utils/filesystem'
 import getDataFile from '../api/getDataFile'
 import { getTimeline } from '../utils/sources'
-import { getCollection, getContent } from '../lib/content'
 import { RebuildResult, ResultType, StepResultType } from '../types/cms'
-import { revalidateContent } from './cache'
 import pLimit from 'p-limit'
 import { sanitizeString } from '../utils/sanitize'
+import { getFileContent } from '../response/responseContent'
 
 const temporary_folder = 'temp'
 
-export async function fetchFromStatamic(sites: string[]): Promise<ResultType> {
+export async function fetchFromStatamic(
+  sites: string[],
+): Promise<ResultType> {
   const results: StepResultType[] = []
 
   const rebuild_results = await rebuildCache(sites)
@@ -34,19 +35,6 @@ export async function fetchFromStatamic(sites: string[]): Promise<ResultType> {
     success: rebuild_success,
     payload: rebuild_results,
   })
-
-  if (rebuild_success) {
-    const revalidation_result = await revalidateContent()
-    if (!revalidation_result.success) {
-      results.push({
-        name: 'step::revalidation',
-        success: false,
-        error: revalidation_result.error,
-      })
-    } else {
-      results.push({ name: 'step::revalidation', success: true })
-    }
-  }
 
   const overall_success = results.every(step => step.success)
   const message = overall_success
@@ -98,7 +86,9 @@ async function createPopulatedCollection(
   collection_id: string,
   site_id: string = 'default',
 ): Promise<any> {
-  const collection = await getCollection(collection_id, temporary_folder)
+  const json_data = getFileContent(temporary_folder, 'collection', collection_id, false)
+  const collection = json_data?.payload
+  // const collection = await getCollection(collection_id, temporary_folder)
 
   if (!collection) {
     // eslint-disable-next-line no-console
@@ -135,11 +125,12 @@ async function createPopulatedCollection(
 
       // tiles
       if (entry.tile_id) {
-        entry.content = await getContent(
-          collection_id,
-          entry.tile_id,
+        entry.content = await getFileContent(
           temporary_folder,
-        )
+          'content',
+          'tile',
+          entry.tile_id,
+        )?.payload
         if (Array.isArray(entry.content.datasources)) {
           entry.content.datasources.forEach((datasource: any) => {
             // sanitize columns
@@ -161,7 +152,7 @@ async function createPopulatedCollection(
 
       // pages
       if (collection_id === 'pages') {
-        entry.content = await getContent('pages', entry.slug, temporary_folder)
+        entry.content = await getFileContent(temporary_folder, 'content', 'page', entry.slug)?.payload
       }
 
       // sources

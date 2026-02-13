@@ -121,31 +121,3 @@ export function writeBuffer(file_path, buffer) {
         }
     });
 }
-export function revalidateContent() {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const endpoint = getCacheEndpoint('revalidate');
-            const response = yield fetch(endpoint, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                // @ts-expect-error -- agent is not part of the native fetch types but supported in Node.js
-                agent: insecure_agent,
-            });
-            if (!response.ok) {
-                return {
-                    success: false,
-                    error: `Failed to revalidate cache. Endpoint: ${endpoint} answered with status: ${response.status}`,
-                };
-            }
-            return { success: true };
-        }
-        catch (error) {
-            return {
-                success: false,
-                error: error instanceof Error ? error.message : 'Unknown error occurred',
-            };
-        }
-    });
-}

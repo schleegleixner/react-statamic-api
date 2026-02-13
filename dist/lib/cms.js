@@ -13,10 +13,9 @@ import path from 'path';
 import { ensureCacheFolder, moveTemporaryFolder, getCachePath, } from '../utils/filesystem';
 import getDataFile from '../api/getDataFile';
 import { getTimeline } from '../utils/sources';
-import { getCollection, getContent } from '../lib/content';
-import { revalidateContent } from './cache';
 import pLimit from 'p-limit';
 import { sanitizeString } from '../utils/sanitize';
+import { getFileContent } from '../response/responseContent';
 const temporary_folder = 'temp';
 export function fetchFromStatamic(sites) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -28,19 +27,6 @@ export function fetchFromStatamic(sites) {
             success: rebuild_success,
             payload: rebuild_results,
         });
-        if (rebuild_success) {
-            const revalidation_result = yield revalidateContent();
-            if (!revalidation_result.success) {
-                results.push({
-                    name: 'step::revalidation',
-                    success: false,
-                    error: revalidation_result.error,
-                });
-            }
-            else {
-                results.push({ name: 'step::revalidation', success: true });
-            }
-        }
         const overall_success = results.every(step => step.success);
         const message = overall_success
             ? `Success! Cache has been flushed and rebuilt. CMS target URL: ${getCMSEndpoint()}`
@@ -71,14 +57,16 @@ function fetchContent() {
 }
 function createPopulatedCollection(collection_id_1) {
     return __awaiter(this, arguments, void 0, function* (collection_id, site_id = 'default') {
-        const collection = yield getCollection(collection_id, temporary_folder);
+        const json_data = getFileContent(temporary_folder, 'collection', collection_id, false);
+        const collection = json_data === null || json_data === void 0 ? void 0 : json_data.payload;
+        // const collection = await getCollection(collection_id, temporary_folder)
         if (!collection) {
             // eslint-disable-next-line no-console
             console.warn(`⚠️ Collection not found: ${collection_id} (${temporary_folder})`, collection);
             return null;
         }
         yield Promise.all(collection.map((entry) => __awaiter(this, void 0, void 0, function* () {
-            var _a, _b;
+            var _a, _b, _c, _d;
             // url rewrites (add site_id in front)
             if (entry.url) {
                 entry.site_id = site_id;
@@ -94,7 +82,7 @@ function createPopulatedCollection(collection_id_1) {
             }
             // tiles
             if (entry.tile_id) {
-                entry.content = yield getContent(collection_id, entry.tile_id, temporary_folder);
+                entry.content = yield ((_a = getFileContent(temporary_folder, 'content', 'tile', entry.tile_id)) === null || _a === void 0 ? void 0 : _a.payload);
                 if (Array.isArray(entry.content.datasources)) {
                     entry.content.datasources.forEach((datasource) => {
                         // sanitize columns
@@ -110,7 +98,7 @@ function createPopulatedCollection(collection_id_1) {
             }
             // pages
             if (collection_id === 'pages') {
-                entry.content = yield getContent('pages', entry.slug, temporary_folder);
+                entry.content = yield ((_b = getFileContent(temporary_folder, 'content', 'page', entry.slug)) === null || _b === void 0 ? void 0 : _b.payload);
             }
             // sources
             if (entry.file_name) {
@@ -118,8 +106,8 @@ function createPopulatedCollection(collection_id_1) {
                 const timeline = getTimeline(content);
                 entry.content = content;
                 entry.timeline = timeline;
-                entry.entry_count = (_a = timeline.length) !== null && _a !== void 0 ? _a : 0;
-                entry.columns = (_b = entry.columns) === null || _b === void 0 ? void 0 : _b.map((column) => {
+                entry.entry_count = (_c = timeline.length) !== null && _c !== void 0 ? _c : 0;
+                entry.columns = (_d = entry.columns) === null || _d === void 0 ? void 0 : _d.map((column) => {
                     return sanitizeString(column);
                 });
             }

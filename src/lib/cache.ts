@@ -153,34 +153,3 @@ export async function writeBuffer(
     return false
   }
 }
-
-export async function revalidateContent(): Promise<{
-  success: boolean
-  error?: string
-}> {
-  try {
-    const endpoint = getCacheEndpoint('revalidate')
-    const response = await fetch(endpoint, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      // @ts-expect-error -- agent is not part of the native fetch types but supported in Node.js
-      agent: insecure_agent,
-    })
-
-    if (!response.ok) {
-      return {
-        success: false,
-        error: `Failed to revalidate cache. Endpoint: ${endpoint} answered with status: ${response.status}`,
-      }
-    }
-
-    return { success: true }
-  } catch (error: unknown) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
-    }
-  }
-}

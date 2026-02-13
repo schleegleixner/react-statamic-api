@@ -18,16 +18,11 @@ export default async function responseContent(req: Request): Promise<Response> {
   const ignore_stale = searchParams.get('ignore_stale') === 'true'
 
   try {
-    const cache_path = getCachedFilePath(site_id, content_type, folder, id)
+    const json_data = getFileContent(site_id, content_type, folder, id)
 
-    if (!fs.existsSync(cache_path)) {
-      return new Response(null, {
-        status: 404,
-      })
+    if (!json_data) {
+      return new Response(null, { status: 404 })
     }
-
-    const cache_data = fs.readFileSync(cache_path, 'utf8')
-    const json_data = JSON.parse(cache_data)
 
     if (!ignore_stale && json_data.expiry && Date.now() > json_data?.expiry) {
       return new Response(null, { status: 410 })
@@ -40,5 +35,21 @@ export default async function responseContent(req: Request): Promise<Response> {
     return new Response(null, {
       status: 404,
     })
+  }
+}
+
+export function getFileContent(site_id: string, content_type: string, folder: string | boolean, id: string | number | boolean) {
+  try {
+    const cache_path = getCachedFilePath(site_id, content_type, folder, id)
+
+    if (!fs.existsSync(cache_path)) {
+      return false
+    }
+
+    const cache_data = fs.readFileSync(cache_path, 'utf8')
+
+    return JSON.parse(cache_data)
+  } catch {
+    return false
   }
 }

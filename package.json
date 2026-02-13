@@ -1,6 +1,6 @@
 {
   "name": "@schleegleixner/react-statamic-api",
-  "version": "1.7.8",
+  "version": "1.8.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -36,6 +36,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "fathom-client": "^3.7.2",
     "prettier": "^3.6.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.8.3"
   },
   "dependencies": {

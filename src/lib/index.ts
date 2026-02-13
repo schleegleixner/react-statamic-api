@@ -6,3 +6,4 @@ export {
   getPopulatedCollection as getCollection,
   getTaxonomy,
 } from './content'
+export { fetchFromStatamic } from './cms'

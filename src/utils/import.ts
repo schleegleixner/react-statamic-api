@@ -1,5 +1,4 @@
 import Papa from 'papaparse'
-import ExcelJS from 'exceljs'
 import fs from 'fs'
 import { sanitizeNumber, sanitizeString } from './sanitize'
 
@@ -42,31 +41,6 @@ export function readJSON(file_path: string): PayloadDataType[] {
   }
 
   return JSON.parse(file_data)
-}
-
-export async function readExcel(file_path: string): Promise<PayloadDataType[]> {
-  const workbook = new ExcelJS.Workbook()
-  await workbook.xlsx.readFile(file_path)
-
-  const sheet = workbook.worksheets[0]
-  const rows: PayloadDataType[] = []
-  let headers: string[] = []
-
-  sheet.eachRow((row, row_number) => {
-    const values = Array.isArray(row.values) ? row.values.slice(1) : []
-    if (row_number === 1) {
-      headers = values.map(v => String(v ?? ''))
-    } else {
-      const obj: PayloadDataType = { INDEX: row_number }
-      headers.forEach((key, i) => {
-        const val = values[i]
-        obj[key] = typeof val === 'number' ? val : null
-      })
-      rows.push(obj)
-    }
-  })
-
-  return rows
 }
 
 export function normalizeHeaders(data: PayloadDataType[]): PayloadDataType[] {

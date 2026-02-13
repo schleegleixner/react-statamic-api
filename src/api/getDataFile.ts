@@ -1,6 +1,6 @@
 import path from 'path'
 import { findDataFile } from '../utils/filesystem'
-import { PayloadDataType, readCSV, readExcel, readJSON } from '../utils/import'
+import { PayloadDataType, readCSV, readJSON } from '../utils/import'
 
 export default async function getDataFile(
   file_name: string,
@@ -19,8 +19,6 @@ export default async function getDataFile(
     return readCSV(file_path)
   } else if (ext === '.json') {
     return readJSON(file_path)
-  } else if (ext === '.xlsx' || ext === '.xls') {
-    return await readExcel(file_path)
   }
 
   // wrong file extension

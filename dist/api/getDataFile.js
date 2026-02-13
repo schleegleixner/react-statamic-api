@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import path from 'path';
 import { findDataFile } from '../utils/filesystem';
-import { readCSV, readExcel, readJSON } from '../utils/import';
+import { readCSV, readJSON } from '../utils/import';
 export default function getDataFile(file_name_1) {
     return __awaiter(this, arguments, void 0, function* (file_name, site_id = null) {
         const sanitized_file_name = path.basename(file_name);
@@ -23,9 +23,6 @@ export default function getDataFile(file_name_1) {
         }
         else if (ext === '.json') {
             return readJSON(file_path);
-        }
-        else if (ext === '.xlsx' || ext === '.xls') {
-            return yield readExcel(file_path);
         }
         // wrong file extension
         return [];

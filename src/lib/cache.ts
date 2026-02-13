@@ -40,7 +40,8 @@ export async function readCache(
     console.error(`🚫 Error reading cache at endpoint: ${endpoint}`, error)
     // write a log entry about the error
     await writeCache(
-      getCachedFilePath('logs', content_type, folder, 'error.log'),
+      // get timestamp (YYYY-MM-DD)
+      getCachedFilePath('logs/' + new Date().toISOString().split('T')[0], content_type, folder, 'error.log'),
       {
         message: `Error reading cache at endpoint: ${endpoint}`,
         error: error instanceof Error ? error.message : String(error),

@@ -52,7 +52,7 @@ function fetchFromRemote() {
     return __awaiter(this, arguments, void 0, function* (site_id = 'default', content_type = 'content', collection_id, id) {
         const base_url = getCMSEndpoint();
         const parts = [content_type, collection_id, id].filter(Boolean);
-        const endpoint = `${base_url}${parts.join('/')}?site_id=${site_id}`;
+        const endpoint = `${base_url}${parts.join('/')}?site_id=${site_id}&secret=${process.env.API_SECRET}`;
         const payload = yield fetchJSON(endpoint);
         if (!payload) {
             return null;

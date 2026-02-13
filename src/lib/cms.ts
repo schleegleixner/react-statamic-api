@@ -64,7 +64,7 @@ async function fetchFromRemote(
 ): Promise<unknown | null> {
   const base_url = getCMSEndpoint()
   const parts = [content_type, collection_id, id].filter(Boolean)
-  const endpoint = `${base_url}${parts.join('/')}?site_id=${site_id}`
+  const endpoint = `${base_url}${parts.join('/')}?site_id=${site_id}&secret=${process.env.API_SECRET}`
 
   const payload = await fetchJSON(endpoint)
   if (!payload) {

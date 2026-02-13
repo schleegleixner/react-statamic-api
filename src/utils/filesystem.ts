@@ -17,6 +17,58 @@ export function ensureCacheFolder(site_id: string = 'default') {
   return cache_path
 }
 
+function getVersionsPath(site_id: string): string {
+  return [process.cwd(), cache_folder, 'versions', site_id].join('/')
+}
+
+function supportsSymlinks(): boolean {
+  const cache_path = [process.cwd(), cache_folder].join('/')
+  const test_link = `${cache_path}/.symlink_test`
+
+  try {
+    if (!fs.existsSync(cache_path)) {
+      fs.mkdirSync(cache_path, { recursive: true })
+    }
+    fs.symlinkSync('.', test_link)
+    fs.unlinkSync(test_link)
+    return true
+  } catch {
+    return false
+  }
+}
+
+function removePath(target: string): void {
+  try {
+    const stats = fs.lstatSync(target)
+    if (stats.isSymbolicLink()) {
+      fs.unlinkSync(target)
+    } else {
+      fs.rmSync(target, { recursive: true, force: true })
+    }
+  } catch {
+    // path doesn't exist, nothing to remove
+  }
+}
+
+function cleanupOldVersions(site_id: string, keep: number = 10): void {
+  const versions_path = getVersionsPath(site_id)
+
+  if (!fs.existsSync(versions_path)) {
+    return
+  }
+
+  const entries = fs.readdirSync(versions_path).sort()
+
+  if (entries.length <= keep) {
+    return
+  }
+
+  const to_remove = entries.slice(0, entries.length - keep)
+  for (const entry of to_remove) {
+    fs.rmSync(`${versions_path}/${entry}`, { recursive: true, force: true })
+  }
+}
+
 export async function moveTemporaryFolder(
   temporary_folder: string,
   site_id: string,
@@ -25,18 +77,44 @@ export async function moveTemporaryFolder(
   const site_path = getCacheRootPath(site_id)
 
   try {
-    // remove existing site folder
+    if (supportsSymlinks()) {
+      const timestamp = Math.floor(Date.now() / 1000)
+      const versions_path = getVersionsPath(site_id)
+      const version_path = `${versions_path}/${timestamp}`
+
+      // create versioned directory
+      fs.mkdirSync(version_path, { recursive: true })
+
+      // copy temp content to versioned folder
+      fs.cpSync(temp_path, version_path, { recursive: true, force: true })
+
+      // remove temp folder
+      fs.rmSync(temp_path, { recursive: true, force: true })
+
+      // remove existing site_path (symlink or folder)
+      removePath(site_path)
+
+      // create symlink: site_path → versions/{site_id}/{timestamp}
+      const relative_target = `versions/${site_id}/${timestamp}`
+      fs.symlinkSync(relative_target, site_path)
+
+      // keep only the last 10 versions
+      cleanupOldVersions(site_id, 10)
+
+      console.log(
+        `💀 Moved cache to version '${timestamp}' for site '${site_id}' (symlinked)`,
+      )
+
+      return true
+    }
+
+    // fallback: direct move (no symlink support)
     if (fs.existsSync(site_path)) {
       fs.rmSync(site_path, { recursive: true, force: true })
     }
 
-    // create new destination folder
     fs.mkdirSync(site_path, { recursive: true })
-
-    // copy everything from temp → site
     fs.cpSync(temp_path, site_path, { recursive: true, force: true })
-
-    // nuke the temporary folder
     fs.rmSync(temp_path, { recursive: true, force: true })
 
     console.log(`💀 Moved and overwrote cache folder for site '${site_id}'`)

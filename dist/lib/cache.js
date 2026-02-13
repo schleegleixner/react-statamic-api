@@ -36,7 +36,9 @@ export function readCache() {
             // eslint-disable-next-line no-console
             console.error(`🚫 Error reading cache at endpoint: ${endpoint}`, error);
             // write a log entry about the error
-            yield writeCache(getCachedFilePath('logs', content_type, folder, 'error.log'), {
+            yield writeCache(
+            // get timestamp (YYYY-MM-DD)
+            getCachedFilePath('logs/' + new Date().toISOString().split('T')[0], content_type, folder, 'error.log'), {
                 message: `Error reading cache at endpoint: ${endpoint}`,
                 error: error instanceof Error ? error.message : String(error),
             });

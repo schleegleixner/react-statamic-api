@@ -46,6 +46,7 @@ export const getSplitSeries = (data, property, split_future = true, current_year
 // categorizeSeriesData categorizes the series data by the given timeline
 export const categorizeSeriesData = (series, timeline, split = false, current_year = null) => {
     const actual_year = current_year !== null && current_year !== void 0 ? current_year : new Date().getFullYear();
+    const hasData = (data) => data.some(d => d !== null);
     return series.flatMap(serie => {
         var _a, _b;
         if (!Array.isArray(serie.data)) {
@@ -61,20 +62,15 @@ export const categorizeSeriesData = (series, timeline, split = false, current_ye
         });
         const categorized_data = timeline.map(year => { var _a; return (_a = data_map.get(year)) !== null && _a !== void 0 ? _a : null; });
         if (!split) {
-            return Object.assign(Object.assign({}, serie), { data: categorized_data });
+            return hasData(categorized_data) ? Object.assign(Object.assign({}, serie), { data: categorized_data }) : [];
         }
         const past_data = timeline.map((year, i) => year <= actual_year ? categorized_data[i] : null);
-        const future_data = timeline.map((year, i) => {
-            if (year >= actual_year) {
-                return categorized_data[i];
-            }
-            return null;
-        });
+        const future_data = timeline.map((year, i) => year >= actual_year ? categorized_data[i] : null);
         const base_id = (_b = (_a = serie.id) !== null && _a !== void 0 ? _a : serie.name) !== null && _b !== void 0 ? _b : 'series';
         return [
-            Object.assign(Object.assign({}, serie), { id: `${base_id}-past`, data: past_data }),
-            Object.assign(Object.assign({}, serie), { id: `${base_id}-future`, name: serie.name, data: future_data, lineStyle: { type: 'dashed' }, showSymbol: true, symbolSize: 7 }),
-        ];
+            hasData(past_data) && Object.assign(Object.assign({}, serie), { id: `${base_id}-past`, data: past_data }),
+            hasData(future_data) && Object.assign(Object.assign({}, serie), { id: `${base_id}-future`, name: serie.name, data: future_data, lineStyle: { type: 'dashed' }, showSymbol: true, symbolSize: 7 }),
+        ].filter(Boolean);
     });
 };
 // calculate a nice minimum for chart axes

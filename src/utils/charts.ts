@@ -68,6 +68,8 @@ export const categorizeSeriesData = (
 ): SeriesOption[] => {
   const actual_year = current_year ?? new Date().getFullYear()
 
+  const hasData = (data: (number | null)[]) => data.some(d => d !== null)
+
   return series.flatMap(serie => {
     if (!Array.isArray(serie.data)) { return serie }
 
@@ -83,26 +85,21 @@ export const categorizeSeriesData = (
     const categorized_data = timeline.map(year => data_map.get(year) ?? null)
 
     if (!split) {
-      return { ...serie, data: categorized_data } as SeriesOption
+      return hasData(categorized_data) ? { ...serie, data: categorized_data } as SeriesOption : []
     }
 
-    const past_data = timeline.map((year, i) =>
-      year <= actual_year ? categorized_data[i] : null
-    )
-    const future_data = timeline.map((year, i) => {
-      if (year >= actual_year) { return categorized_data[i] }
-      return null
-    })
+    const past_data = timeline.map((year, i) => year <= actual_year ? categorized_data[i] : null)
+    const future_data = timeline.map((year, i) => year >= actual_year ? categorized_data[i] : null)
 
     const base_id = (serie as any).id ?? serie.name ?? 'series'
 
     return [
-      {
+      hasData(past_data) && {
         ...serie,
         id: `${base_id}-past`,
-        data: past_data
-      } as SeriesOption,
-      {
+        data: past_data,
+      },
+      hasData(future_data) && {
         ...serie,
         id: `${base_id}-future`,
         name: serie.name,
@@ -110,8 +107,8 @@ export const categorizeSeriesData = (
         lineStyle: { type: 'dashed' },
         showSymbol: true,
         symbolSize: 7,
-      } as SeriesOption,
-    ]
+      },
+    ].filter(Boolean) as SeriesOption[]
   })
 }
 

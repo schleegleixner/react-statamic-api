@@ -44,22 +44,42 @@ export function readJSON(file_path: string): PayloadDataType[] {
 }
 
 export function normalizeHeaders(data: PayloadDataType[]): PayloadDataType[] {
+  if (!data.length) {
+    return data
+  }
+
+  const indexCandidates = ['ZEIT', 'JAHR', 'INDEX']
+
+  // Prüfen ob irgendeine Spalte einem Index-Kandidaten entspricht
+  const hasIndexColumn = Object.keys(data[0]).some(key =>
+    indexCandidates.includes(sanitizeString(key).toUpperCase()),
+  )
+
   return data.map(entry => {
     const normalizedEntry: PayloadDataType = {}
 
-    Object.keys(entry).forEach(key => {
+    Object.keys(entry).forEach((key, i) => {
       const raw_key = sanitizeString(key)
-      const normalizedKey = ['ZEIT', 'JAHR'].includes(raw_key.toUpperCase())
-        ? 'INDEX'
-        : raw_key
+      const upperKey = raw_key.toUpperCase()
 
-      const cleaned_key = normalizedKey.trim()
-      normalizedEntry[cleaned_key] = entry[key]
+      let normalizedKey: string
+      if (indexCandidates.includes(upperKey)) {
+        // Bekannter Index-Kandidat → immer umbenennen
+        normalizedKey = 'INDEX'
+      } else if (!hasIndexColumn && i === 0) {
+        // Kein Index-Kandidat gefunden → erste Spalte als Fallback
+        normalizedKey = 'INDEX'
+      } else {
+        normalizedKey = raw_key
+      }
+
+      normalizedEntry[normalizedKey.trim()] = entry[key]
     })
 
     return normalizedEntry
   })
 }
+
 
 export function filterValidEntries(data: PayloadDataType[]): PayloadDataType[] {
   if (!data.length) {

@@ -1,21 +1,26 @@
 {
   "name": "@schleegleixner/react-statamic-api",
-  "version": "1.8.3",
+  "version": "1.8.4",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "react-statamic-flush": "./dist/cli/flush.cjs"
+  },
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.js"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc -w -p tsconfig.json & tsc-alias -w -p tsconfig.json",
+    "build": "tsc -p tsconfig.build.json && npm run build:cli",
+    "build:cli": "esbuild src/cli/flush.ts --bundle --platform=node --format=cjs --banner:js='#!/usr/bin/env node' --external:sharp --outfile=dist/cli/flush.cjs",
+    "flush:statamic": "node ./dist/cli/flush.cjs",
+    "dev": "tsc -w -p tsconfig.build.json & tsc-alias -w -p tsconfig.build.json",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
@@ -30,6 +35,7 @@
     "@typescript-eslint/eslint-plugin": "^8.56.0",
     "@typescript-eslint/parser": "^8.56.0",
     "echarts": "^6.0.0",
+    "esbuild": "^0.25.0",
     "eslint": "^9.39.3",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react": "^7.37.5",
@@ -40,6 +46,7 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
+    "dotenv": "^16.4.7",
     "axios": "^1.11.0",
     "class-variance-authority": "^0.7.1",
     "install": "^0.13.0",

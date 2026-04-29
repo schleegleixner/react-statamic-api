@@ -23,7 +23,10 @@ export function getCacheEndpoint(url = ''): string {
   return endpoint.replace(/([^:]\/)\/+/g, '$1') // remove double slashes
 }
 
-export async function fetchJSON(endpoint: string): Promise<any> {
+export async function fetchJSON(
+  endpoint: string,
+  options?: { silentNotFound?: boolean },
+): Promise<any> {
   const timeout = Number(process.env.NEXT_PUBLIC_API_TIMEOUT) || 5000
 
   const agent = new https.Agent({
@@ -42,6 +45,13 @@ export async function fetchJSON(endpoint: string): Promise<any> {
 
     return null
   } catch (error) {
+    if (
+      options?.silentNotFound &&
+      axios.isAxiosError(error) &&
+      error.response?.status === 404
+    ) {
+      return null
+    }
     // eslint-disable-next-line no-console
     console.error('fetchJSON error:', endpoint, error)
     return null

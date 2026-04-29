@@ -24,9 +24,9 @@ export function getCacheEndpoint(url = '') {
     const endpoint = process.env.NEXT_PUBLIC_URL + '/api/' + url;
     return endpoint.replace(/([^:]\/)\/+/g, '$1'); // remove double slashes
 }
-export function fetchJSON(endpoint) {
+export function fetchJSON(endpoint, options) {
     return __awaiter(this, void 0, void 0, function* () {
-        var _a, _b, _c;
+        var _a, _b, _c, _d;
         const timeout = Number(process.env.NEXT_PUBLIC_API_TIMEOUT) || 5000;
         const agent = new https.Agent({
             rejectUnauthorized: false,
@@ -42,6 +42,11 @@ export function fetchJSON(endpoint) {
             return null;
         }
         catch (error) {
+            if ((options === null || options === void 0 ? void 0 : options.silentNotFound) &&
+                axios.isAxiosError(error) &&
+                ((_d = error.response) === null || _d === void 0 ? void 0 : _d.status) === 404) {
+                return null;
+            }
             // eslint-disable-next-line no-console
             console.error('fetchJSON error:', endpoint, error);
             return null;

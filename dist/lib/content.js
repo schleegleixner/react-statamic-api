@@ -58,6 +58,12 @@ export function getPopulatedCollection() {
         return null;
     });
 }
+export function getNavigation(handle, site_id) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const cache_data = (yield readCache(site_id, 'navigation', `${handle}.populated`, false, false)) || null;
+        return cache_data;
+    });
+}
 // request data from the cache (if available)
 export function getCachedData(api) {
     return __awaiter(this, void 0, void 0, function* () {

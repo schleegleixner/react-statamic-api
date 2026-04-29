@@ -1,10 +1,12 @@
 import { TileDataType } from '../types/tiles';
 import { ImageMetaInterface } from '../types/files';
+import { NavigationType } from '../types';
 export declare function getContent(collection_id?: string, id?: string | number | boolean, site_id?: string): Promise<any>;
 export declare function getGlobal(global_id: string, site_id?: string): Promise<any>;
 export declare function getTaxonomy(taxonomy_id: string, site_id?: string): Promise<any>;
 export declare function getCollection(collection_id?: string, site_id?: string): Promise<any>;
 export declare function getPopulatedCollection(collection_id?: string, site_id?: string): Promise<any>;
+export declare function getNavigation(handle: string, site_id?: string): Promise<NavigationType | null>;
 export declare function getCachedData(api: string): Promise<any>;
 export declare function getCompleteTileset(site_id?: string): Promise<TileDataType[]>;
 export declare function getImageMeta(file_name: string, site_id?: string, use_cache?: boolean): Promise<ImageMetaInterface | false>;

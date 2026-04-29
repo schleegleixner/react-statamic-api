@@ -17158,7 +17158,7 @@ function getCMSEndpoint(url2 = "") {
   const endpoint = process.env.SSD_API + url2;
   return endpoint.replace(/([^:]\/)\/+/g, "$1");
 }
-async function fetchJSON(endpoint) {
+async function fetchJSON(endpoint, options) {
   const timeout = Number(process.env.NEXT_PUBLIC_API_TIMEOUT) || 5e3;
   const agent = new import_https2.default.Agent({
     rejectUnauthorized: false
@@ -17173,6 +17173,9 @@ async function fetchJSON(endpoint) {
     }
     return null;
   } catch (error) {
+    if (options?.silentNotFound && axios_default.isAxiosError(error) && error.response?.status === 404) {
+      return null;
+    }
     console.error("fetchJSON error:", endpoint, error);
     return null;
   }
@@ -17562,6 +17565,15 @@ function getFileContent(site_id, content_type, folder, id) {
 
 // src/lib/cms.ts
 var temporary_folder = "temp";
+function buildFullUrl(url2, site_id = "default") {
+  if (!url2) {
+    return null;
+  }
+  if (url2.startsWith("http")) {
+    return url2;
+  }
+  return `/${site_id !== "default" ? site_id : ""}/${url2}`.replace(/\/+/g, "/");
+}
 async function fetchFromStatamic(sites) {
   const results = [];
   const rebuild_results = await rebuildCache(sites);
@@ -17574,14 +17586,17 @@ async function fetchFromStatamic(sites) {
     payload: rebuild_results
   });
   const overall_success = results.every((step) => step.success);
-  const message = overall_success ? `Success! Cache has been flushed and rebuilt. CMS target URL: ${getCMSEndpoint()}` : `Some steps failed. Check the results for more information. CMS target URL: ${getCMSEndpoint()}`;
-  return { message, results, success: overall_success };
+  const message = overall_success ? `Success! Cache has been flushed and rebuilt.` : `Some steps failed. Check the results for more information.`;
+  const endpoint = getCMSEndpoint();
+  return { message, endpoint, results, success: overall_success };
 }
-async function fetchFromRemote(site_id = "default", content_type = "content", collection_id, id) {
+async function fetchFromRemote(site_id = "default", content_type = "content", collection_id, id, options) {
   const base_url = getCMSEndpoint();
   const parts = [content_type, collection_id, id].filter(Boolean);
   const endpoint = `${base_url}${parts.join("/")}?site_id=${site_id}&secret=${process.env.API_SECRET}`;
-  const payload = await fetchJSON(endpoint);
+  const payload = await fetchJSON(endpoint, {
+    silentNotFound: options?.silentNotFound
+  });
   if (!payload) {
     return null;
   }
@@ -17612,15 +17627,9 @@ async function createPopulatedCollection(collection_id, site_id = "default") {
     collection.map(async (entry) => {
       if (entry.url) {
         entry.site_id = site_id;
-        entry.full_url = entry.url.startsWith("http") ? entry.url : `/${site_id !== "default" ? site_id : ""}/${entry.url}`.replace(
-          /\/+/g,
-          "/"
-        );
+        entry.full_url = buildFullUrl(entry.url, site_id);
         if (entry.parent) {
-          entry.parent.full_url = entry.parent.url.startsWith("http") ? entry.parent.url : `/${site_id !== "default" ? site_id : ""}/${entry.parent.url}`.replace(
-            /\/+/g,
-            "/"
-          );
+          entry.parent.full_url = buildFullUrl(entry.parent.url, site_id);
         }
       }
       if (entry.tile_id) {
@@ -17670,6 +17679,51 @@ async function createPopulatedCollection(collection_id, site_id = "default") {
   );
   return collection;
 }
+async function createPopulatedNavigation(handle, site_id = "default") {
+  const json_data = getFileContent(temporary_folder, "navigation", handle, false);
+  const navigation = json_data?.payload;
+  if (!navigation) {
+    console.warn(
+      `\u26A0\uFE0F Navigation not found: ${handle} (${temporary_folder})`
+    );
+    return null;
+  }
+  const pages_data = getFileContent(
+    temporary_folder,
+    "collection",
+    "pages.populated",
+    false
+  );
+  const pages = pages_data?.payload ?? [];
+  const pages_by_slug = new Map(pages.map((p) => [p.slug, p]));
+  const mapItem = (item) => {
+    const page = item.entry ? pages_by_slug.get(item.entry) : item.slug ? pages_by_slug.get(item.slug) : void 0;
+    const child_items = item.children ?? item.items ?? [];
+    const is_external = item.url?.startsWith("http") ?? false;
+    return {
+      id: page?.id ?? item.id ?? null,
+      slug: page?.slug ?? item.slug ?? null,
+      title: item.title ?? page?.title ?? null,
+      aria_label: item.aria_label ?? item.title ?? page?.title ?? null,
+      target: item.target ?? (is_external ? "_blank" : "_self"),
+      full_url: page?.full_url ?? buildFullUrl(item.url, site_id),
+      children: Array.isArray(child_items) ? child_items.map(mapItem) : []
+    };
+  };
+  const populated = {
+    handle: navigation.handle ?? handle,
+    title: navigation.title ?? null,
+    items: Array.isArray(navigation.items) ? navigation.items.map(mapItem) : []
+  };
+  await writeContentCache(
+    temporary_folder,
+    "navigation",
+    `${handle}.populated`,
+    false,
+    populated
+  );
+  return populated;
+}
 async function downloadFile(site_id, file_path, folder) {
   const endpoint = file_path.startsWith("http") ? file_path : getCMSEndpoint(import_path3.default.join(folder, file_path));
   const file_name = file_path.startsWith("http") ? import_path3.default.basename(file_path) : file_path;
@@ -17716,6 +17770,7 @@ async function fetchForSite(site_id) {
   collections.forEach((c, i) => data[c] = collection_results[i]);
   const tasks_content = [];
   const tasks_files = [];
+  let navigation_handles = [];
   (data.tiles ?? []).forEach(
     (tile) => tasks_content.push(
       limit(
@@ -17751,6 +17806,30 @@ async function fetchForSite(site_id) {
         )
       )
     )
+  );
+  tasks_content.push(
+    limit(async () => {
+      const list_payload = await fetchFromRemote(
+        site_id,
+        "navigation",
+        void 0,
+        void 0,
+        { silentNotFound: true }
+      );
+      results.push({ name: "navigation::list", success: !!list_payload });
+      navigation_handles = (list_payload ?? []).map(({ handle }) => handle);
+      await Promise.all(
+        navigation_handles.map(
+          (handle) => limit(
+            () => fetchFromRemote(site_id, "navigation", handle, void 0, {
+              silentNotFound: true
+            }).then(
+              (r) => results.push({ name: "navigation::" + handle, success: !!r })
+            )
+          )
+        )
+      );
+    })
   );
   (data.images ?? []).forEach(
     (image) => tasks_files.push(
@@ -17790,6 +17869,15 @@ async function fetchForSite(site_id) {
     const result = await createPopulatedCollection(c, site_id);
     results.push({
       name: "populated_collection::" + c,
+      success: result !== null
+    });
+  }
+  console.log(`\u2139\uFE0F Creating populated navigation: ${navigation_handles.length} (${site_id})`);
+  for (const handle of navigation_handles) {
+    console.log(`\u2139\uFE0F Creating populated navigation: ${handle} (${site_id})`);
+    const result = await createPopulatedNavigation(handle, site_id);
+    results.push({
+      name: "populated_navigation::" + handle,
       success: result !== null
     });
   }

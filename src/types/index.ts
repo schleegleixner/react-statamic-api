@@ -17,4 +17,6 @@ export {
 
 export { BreadcrumbType, PageContentType, PageMappingType } from './pages'
 
+export { NavigationItemType, NavigationType } from './navigation'
+
 export { TooltipIndexType, TooltipDataType } from './tooltips'

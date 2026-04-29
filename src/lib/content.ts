@@ -4,6 +4,7 @@ import { fetchJSON, getCacheEndpoint } from '../utils/api'
 import { TileDatasourceType, TileDataType } from '../types/tiles'
 import { readLocalStorage, writeLocalStorage } from '../utils/localstorage'
 import { ImageMetaInterface } from '../types/files'
+import { NavigationType } from '../types'
 
 async function handleRequest(
   site_id: string = 'default',
@@ -77,6 +78,22 @@ export async function getPopulatedCollection(
   }
 
   return null
+}
+
+export async function getNavigation(
+  handle: string,
+  site_id?: string,
+): Promise<NavigationType | null> {
+  const cache_data =
+    (await readCache(
+      site_id,
+      'navigation',
+      `${handle}.populated`,
+      false,
+      false,
+    )) || null
+
+  return cache_data
 }
 
 // request data from the cache (if available)

@@ -6,10 +6,10 @@ export const setTranslations = (translations) => {
 export const setSiteId = (site_id) => {
     active_site_id = site_id || '';
 };
-export const getGlobalString = (key) => {
+export const getGlobalString = (key, fallback) => {
     if (Object.keys(active_translations).length === 0 ||
         !(key in active_translations)) {
-        return `[${key}]`;
+        return fallback || `[${key}]`;
     }
     return active_translations[key];
 };

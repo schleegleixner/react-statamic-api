@@ -17,6 +17,15 @@ import pLimit from 'p-limit';
 import { sanitizeString } from '../utils/sanitize';
 import { getFileContent } from '../response/responseContent';
 const temporary_folder = 'temp';
+function buildFullUrl(url, site_id = 'default') {
+    if (!url) {
+        return null;
+    }
+    if (url.startsWith('http')) {
+        return url;
+    }
+    return `/${site_id !== 'default' ? site_id : ''}/${url}`.replace(/\/+/g, '/');
+}
 export function fetchFromStatamic(sites) {
     return __awaiter(this, void 0, void 0, function* () {
         const results = [];
@@ -29,17 +38,20 @@ export function fetchFromStatamic(sites) {
         });
         const overall_success = results.every(step => step.success);
         const message = overall_success
-            ? `Success! Cache has been flushed and rebuilt. CMS target URL: ${getCMSEndpoint()}`
-            : `Some steps failed. Check the results for more information. CMS target URL: ${getCMSEndpoint()}`;
-        return { message, results, success: overall_success };
+            ? `Success! Cache has been flushed and rebuilt.`
+            : `Some steps failed. Check the results for more information.`;
+        const endpoint = getCMSEndpoint();
+        return { message, endpoint, results, success: overall_success };
     });
 }
 function fetchFromRemote() {
-    return __awaiter(this, arguments, void 0, function* (site_id = 'default', content_type = 'content', collection_id, id) {
+    return __awaiter(this, arguments, void 0, function* (site_id = 'default', content_type = 'content', collection_id, id, options) {
         const base_url = getCMSEndpoint();
         const parts = [content_type, collection_id, id].filter(Boolean);
         const endpoint = `${base_url}${parts.join('/')}?site_id=${site_id}&secret=${process.env.API_SECRET}`;
-        const payload = yield fetchJSON(endpoint);
+        const payload = yield fetchJSON(endpoint, {
+            silentNotFound: options === null || options === void 0 ? void 0 : options.silentNotFound,
+        });
         if (!payload) {
             return null;
         }
@@ -70,14 +82,9 @@ function createPopulatedCollection(collection_id_1) {
             // url rewrites (add site_id in front)
             if (entry.url) {
                 entry.site_id = site_id;
-                // construct the full URL
-                entry.full_url = entry.url.startsWith('http')
-                    ? entry.url
-                    : `/${site_id !== 'default' ? site_id : ''}/${entry.url}`.replace(/\/+/g, '/');
+                entry.full_url = buildFullUrl(entry.url, site_id);
                 if (entry.parent) {
-                    entry.parent.full_url = entry.parent.url.startsWith('http')
-                        ? entry.parent.url
-                        : `/${site_id !== 'default' ? site_id : ''}/${entry.parent.url}`.replace(/\/+/g, '/');
+                    entry.parent.full_url = buildFullUrl(entry.parent.url, site_id);
                 }
             }
             // tiles
@@ -114,6 +121,47 @@ function createPopulatedCollection(collection_id_1) {
         })));
         yield writeContentCache(temporary_folder, 'collection', `${collection_id}.populated`, false, collection);
         return collection;
+    });
+}
+function createPopulatedNavigation(handle_1) {
+    return __awaiter(this, arguments, void 0, function* (handle, site_id = 'default') {
+        var _a, _b, _c;
+        const json_data = getFileContent(temporary_folder, 'navigation', handle, false);
+        const navigation = json_data === null || json_data === void 0 ? void 0 : json_data.payload;
+        if (!navigation) {
+            // eslint-disable-next-line no-console
+            console.warn(`⚠️ Navigation not found: ${handle} (${temporary_folder})`);
+            return null;
+        }
+        const pages_data = getFileContent(temporary_folder, 'collection', 'pages.populated', false);
+        const pages = (_a = pages_data === null || pages_data === void 0 ? void 0 : pages_data.payload) !== null && _a !== void 0 ? _a : [];
+        const pages_by_slug = new Map(pages.map(p => [p.slug, p]));
+        const mapItem = (item) => {
+            var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;
+            const page = item.entry
+                ? pages_by_slug.get(item.entry)
+                : item.slug
+                    ? pages_by_slug.get(item.slug)
+                    : undefined;
+            const child_items = (_b = (_a = item.children) !== null && _a !== void 0 ? _a : item.items) !== null && _b !== void 0 ? _b : [];
+            const is_external = (_d = (_c = item.url) === null || _c === void 0 ? void 0 : _c.startsWith('http')) !== null && _d !== void 0 ? _d : false;
+            return {
+                id: (_f = (_e = page === null || page === void 0 ? void 0 : page.id) !== null && _e !== void 0 ? _e : item.id) !== null && _f !== void 0 ? _f : null,
+                slug: (_h = (_g = page === null || page === void 0 ? void 0 : page.slug) !== null && _g !== void 0 ? _g : item.slug) !== null && _h !== void 0 ? _h : null,
+                title: (_k = (_j = item.title) !== null && _j !== void 0 ? _j : page === null || page === void 0 ? void 0 : page.title) !== null && _k !== void 0 ? _k : null,
+                aria_label: (_o = (_m = (_l = item.aria_label) !== null && _l !== void 0 ? _l : item.title) !== null && _m !== void 0 ? _m : page === null || page === void 0 ? void 0 : page.title) !== null && _o !== void 0 ? _o : null,
+                target: (_p = item.target) !== null && _p !== void 0 ? _p : (is_external ? '_blank' : '_self'),
+                full_url: (_q = page === null || page === void 0 ? void 0 : page.full_url) !== null && _q !== void 0 ? _q : buildFullUrl(item.url, site_id),
+                children: Array.isArray(child_items) ? child_items.map(mapItem) : [],
+            };
+        };
+        const populated = {
+            handle: (_b = navigation.handle) !== null && _b !== void 0 ? _b : handle,
+            title: (_c = navigation.title) !== null && _c !== void 0 ? _c : null,
+            items: Array.isArray(navigation.items) ? navigation.items.map(mapItem) : [],
+        };
+        yield writeContentCache(temporary_folder, 'navigation', `${handle}.populated`, false, populated);
+        return populated;
     });
 }
 export function getAPI(api_1) {
@@ -202,10 +250,19 @@ function fetchForSite(site_id) {
         collections.forEach((c, i) => (data[c] = collection_results[i]));
         const tasks_content = [];
         const tasks_files = [];
+        let navigation_handles = [];
         ((_a = data.tiles) !== null && _a !== void 0 ? _a : []).forEach((tile) => tasks_content.push(limit(() => fetchContent(site_id, 'tile', tile.tile_id).then(r => results.push({ name: 'tile::' + tile.tile_id, success: !!r })))));
         ((_b = data.pages) !== null && _b !== void 0 ? _b : []).forEach((page) => tasks_content.push(limit(() => fetchContent(site_id, 'page', page.slug).then(r => results.push({ name: 'page::' + page.slug, success: !!r })))));
         taxonomies.forEach(t => tasks_content.push(limit(() => fetchFromRemote(site_id, 'taxonomy', t).then(r => results.push({ name: 'taxonomy::' + t, success: !!r })))));
         global.forEach(g => tasks_content.push(limit(() => fetchFromRemote(site_id, 'global', g).then(r => results.push({ name: 'global::' + g, success: !!r })))));
+        tasks_content.push(limit(() => __awaiter(this, void 0, void 0, function* () {
+            const list_payload = (yield fetchFromRemote(site_id, 'navigation', undefined, undefined, { silentNotFound: true }));
+            results.push({ name: 'navigation::list', success: !!list_payload });
+            navigation_handles = (list_payload !== null && list_payload !== void 0 ? list_payload : []).map(({ handle }) => handle);
+            yield Promise.all(navigation_handles.map(handle => limit(() => fetchFromRemote(site_id, 'navigation', handle, undefined, {
+                silentNotFound: true,
+            }).then(r => results.push({ name: 'navigation::' + handle, success: !!r })))));
+        })));
         ((_c = data.images) !== null && _c !== void 0 ? _c : []).forEach((image) => tasks_files.push(limit(() => downloadFile(site_id, image.url, 'images').then(r => results.push({
             name: 'image::' + image.file_name,
             success: r !== null,
@@ -228,6 +285,17 @@ function fetchForSite(site_id) {
             const result = yield createPopulatedCollection(c, site_id);
             results.push({
                 name: 'populated_collection::' + c,
+                success: result !== null,
+            });
+        }
+        // eslint-disable-next-line no-console
+        console.log(`ℹ️ Creating populated navigation: ${navigation_handles.length} (${site_id})`);
+        for (const handle of navigation_handles) {
+            // eslint-disable-next-line no-console
+            console.log(`ℹ️ Creating populated navigation: ${handle} (${site_id})`);
+            const result = yield createPopulatedNavigation(handle, site_id);
+            results.push({
+                name: 'populated_navigation::' + handle,
                 success: result !== null,
             });
         }

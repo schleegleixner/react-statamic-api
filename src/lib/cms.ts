@@ -14,11 +14,25 @@ import {
 import getDataFile from '../api/getDataFile'
 import { getTimeline } from '../utils/sources'
 import { RebuildResult, ResultType, StepResultType } from '../types/cms'
+import { PageMappingType } from '../types/pages'
 import pLimit from 'p-limit'
 import { sanitizeString } from '../utils/sanitize'
 import { getFileContent } from '../response/responseContent'
 
 const temporary_folder = 'temp'
+
+function buildFullUrl(
+  url: string | undefined | null,
+  site_id: string = 'default',
+): string | null {
+  if (!url) {
+    return null
+  }
+  if (url.startsWith('http')) {
+    return url
+  }
+  return `/${site_id !== 'default' ? site_id : ''}/${url}`.replace(/\/+/g, '/')
+}
 
 export async function fetchFromStatamic(
   sites: string[],
@@ -38,10 +52,11 @@ export async function fetchFromStatamic(
 
   const overall_success = results.every(step => step.success)
   const message = overall_success
-    ? `Success! Cache has been flushed and rebuilt. CMS target URL: ${getCMSEndpoint()}`
-    : `Some steps failed. Check the results for more information. CMS target URL: ${getCMSEndpoint()}`
+    ? `Success! Cache has been flushed and rebuilt.`
+    : `Some steps failed. Check the results for more information.`
+  const endpoint = getCMSEndpoint()
 
-  return { message, results, success: overall_success }
+  return { message, endpoint, results, success: overall_success }
 }
 
 async function fetchFromRemote(
@@ -49,12 +64,15 @@ async function fetchFromRemote(
   content_type: string = 'content',
   collection_id?: string,
   id?: string | number,
+  options?: { silentNotFound?: boolean },
 ): Promise<unknown | null> {
   const base_url = getCMSEndpoint()
   const parts = [content_type, collection_id, id].filter(Boolean)
   const endpoint = `${base_url}${parts.join('/')}?site_id=${site_id}&secret=${process.env.API_SECRET}`
 
-  const payload = await fetchJSON(endpoint)
+  const payload = await fetchJSON(endpoint, {
+    silentNotFound: options?.silentNotFound,
+  })
   if (!payload) {
     return null
   }
@@ -104,22 +122,10 @@ async function createPopulatedCollection(
       // url rewrites (add site_id in front)
       if (entry.url) {
         entry.site_id = site_id
-
-        // construct the full URL
-        entry.full_url = entry.url.startsWith('http')
-          ? entry.url
-          : `/${site_id !== 'default' ? site_id : ''}/${entry.url}`.replace(
-            /\/+/g,
-            '/',
-          )
+        entry.full_url = buildFullUrl(entry.url, site_id)
 
         if (entry.parent) {
-          entry.parent.full_url = entry.parent.url.startsWith('http')
-            ? entry.parent.url
-            : `/${site_id !== 'default' ? site_id : ''}/${entry.parent.url}`.replace(
-              /\/+/g,
-              '/',
-            )
+          entry.parent.full_url = buildFullUrl(entry.parent.url, site_id)
         }
       }
 
@@ -179,6 +185,94 @@ async function createPopulatedCollection(
 
   return collection
 }
+
+type NavItemRaw = {
+  id?: string
+  entry?: string
+  slug?: string
+  title?: string
+  aria_label?: string
+  target?: string
+  url?: string
+  children?: NavItemRaw[]
+  items?: NavItemRaw[]
+}
+
+type NavItemPopulated = {
+  id: string | null
+  slug: string | null
+  title: string | null
+  aria_label: string | null
+  target: string
+  full_url: string | null
+  children: NavItemPopulated[]
+}
+
+async function createPopulatedNavigation(
+  handle: string,
+  site_id: string = 'default',
+): Promise<{
+  handle: string
+  title: string | null
+  items: NavItemPopulated[]
+} | null> {
+  const json_data = getFileContent(temporary_folder, 'navigation', handle, false)
+  const navigation = json_data?.payload
+
+  if (!navigation) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `⚠️ Navigation not found: ${handle} (${temporary_folder})`,
+    )
+    return null
+  }
+
+  const pages_data = getFileContent(
+    temporary_folder,
+    'collection',
+    'pages.populated',
+    false,
+  )
+  const pages: PageMappingType[] = pages_data?.payload ?? []
+  const pages_by_slug = new Map(pages.map(p => [p.slug, p]))
+
+  const mapItem = (item: NavItemRaw): NavItemPopulated => {
+    const page = item.entry
+      ? pages_by_slug.get(item.entry)
+      : item.slug
+        ? pages_by_slug.get(item.slug)
+        : undefined
+    const child_items = item.children ?? item.items ?? []
+    const is_external = item.url?.startsWith('http') ?? false
+
+    return {
+      id: page?.id ?? item.id ?? null,
+      slug: page?.slug ?? item.slug ?? null,
+      title: item.title ?? page?.title ?? null,
+      aria_label: item.aria_label ?? item.title ?? page?.title ?? null,
+      target: item.target ?? (is_external ? '_blank' : '_self'),
+      full_url: page?.full_url ?? buildFullUrl(item.url, site_id),
+      children: Array.isArray(child_items) ? child_items.map(mapItem) : [],
+    }
+  }
+
+  const populated = {
+    handle: navigation.handle ?? handle,
+    title: navigation.title ?? null,
+    items: Array.isArray(navigation.items) ? navigation.items.map(mapItem) : [],
+  }
+
+  await writeContentCache(
+    temporary_folder,
+    'navigation',
+    `${handle}.populated`,
+    false,
+    populated,
+  )
+
+  return populated
+}
+
 
 export async function getAPI(
   api: string,
@@ -285,6 +379,7 @@ async function fetchForSite(site_id: string) {
 
   const tasks_content: Promise<any>[] = []
   const tasks_files: Promise<any>[] = []
+  let navigation_handles: string[] = []
 
     ; (data.tiles ?? []).forEach((tile: { tile_id: string }) =>
       tasks_content.push(
@@ -323,6 +418,31 @@ async function fetchForSite(site_id: string) {
         ),
       ),
     ),
+  )
+
+  tasks_content.push(
+    limit(async () => {
+      const list_payload = (await fetchFromRemote(
+        site_id,
+        'navigation',
+        undefined,
+        undefined,
+        { silentNotFound: true },
+      )) as { handle: string }[] | null
+      results.push({ name: 'navigation::list', success: !!list_payload })
+      navigation_handles = (list_payload ?? []).map(({ handle }) => handle)
+      await Promise.all(
+        navigation_handles.map(handle =>
+          limit(() =>
+            fetchFromRemote(site_id, 'navigation', handle, undefined, {
+              silentNotFound: true,
+            }).then(r =>
+              results.push({ name: 'navigation::' + handle, success: !!r }),
+            ),
+          ),
+        ),
+      )
+    }),
   )
 
     // only download images and sources for the default site
@@ -372,6 +492,19 @@ async function fetchForSite(site_id: string) {
     const result = await createPopulatedCollection(c, site_id)
     results.push({
       name: 'populated_collection::' + c,
+      success: result !== null,
+    })
+  }
+
+  // eslint-disable-next-line no-console
+  console.log(`ℹ️ Creating populated navigation: ${navigation_handles.length} (${site_id})`)
+
+  for (const handle of navigation_handles) {
+    // eslint-disable-next-line no-console
+    console.log(`ℹ️ Creating populated navigation: ${handle} (${site_id})`)
+    const result = await createPopulatedNavigation(handle, site_id)
+    results.push({
+      name: 'populated_navigation::' + handle,
       success: result !== null,
     })
   }

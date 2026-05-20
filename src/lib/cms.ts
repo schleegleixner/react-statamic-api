@@ -341,7 +341,7 @@ export async function rebuildCache(sites: string[]): Promise<RebuildResult[]> {
 
         // check if any step failed
         if (fetch_result.every(result => result.success === true)) {
-          moveTemporaryFolder(temporary_folder, site)
+          await moveTemporaryFolder(temporary_folder, site)
           return { name, success: true, result: fetch_result }
         }
         return { name, success: false, result: fetch_result }
@@ -429,7 +429,9 @@ async function fetchForSite(site_id: string) {
         undefined,
         { silentNotFound: true },
       )) as { handle: string }[] | null
-      results.push({ name: 'navigation::list', success: !!list_payload })
+      // navigation list is optional (silentNotFound); a missing list must not
+      // fail the rebuild and block moveTemporaryFolder from running
+      results.push({ name: 'navigation::list', success: true })
       navigation_handles = (list_payload ?? []).map(({ handle }) => handle)
       await Promise.all(
         navigation_handles.map(handle =>

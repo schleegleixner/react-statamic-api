@@ -17745,7 +17745,7 @@ async function rebuildCache(sites) {
         ensureCacheFolder(temporary_folder);
         const fetch_result = await fetchForSite(site);
         if (fetch_result.every((result) => result.success === true)) {
-          moveTemporaryFolder(temporary_folder, site);
+          await moveTemporaryFolder(temporary_folder, site);
           return { name, success: true, result: fetch_result };
         }
         return { name, success: false, result: fetch_result };
@@ -17816,7 +17816,7 @@ async function fetchForSite(site_id) {
         void 0,
         { silentNotFound: true }
       );
-      results.push({ name: "navigation::list", success: !!list_payload });
+      results.push({ name: "navigation::list", success: true });
       navigation_handles = (list_payload ?? []).map(({ handle }) => handle);
       await Promise.all(
         navigation_handles.map(

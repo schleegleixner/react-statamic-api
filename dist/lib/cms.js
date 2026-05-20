@@ -216,7 +216,7 @@ export function rebuildCache(sites) {
                 const fetch_result = yield fetchForSite(site);
                 // check if any step failed
                 if (fetch_result.every(result => result.success === true)) {
-                    moveTemporaryFolder(temporary_folder, site);
+                    yield moveTemporaryFolder(temporary_folder, site);
                     return { name, success: true, result: fetch_result };
                 }
                 return { name, success: false, result: fetch_result };
@@ -257,7 +257,9 @@ function fetchForSite(site_id) {
         global.forEach(g => tasks_content.push(limit(() => fetchFromRemote(site_id, 'global', g).then(r => results.push({ name: 'global::' + g, success: !!r })))));
         tasks_content.push(limit(() => __awaiter(this, void 0, void 0, function* () {
             const list_payload = (yield fetchFromRemote(site_id, 'navigation', undefined, undefined, { silentNotFound: true }));
-            results.push({ name: 'navigation::list', success: !!list_payload });
+            // navigation list is optional (silentNotFound); a missing list must not
+            // fail the rebuild and block moveTemporaryFolder from running
+            results.push({ name: 'navigation::list', success: true });
             navigation_handles = (list_payload !== null && list_payload !== void 0 ? list_payload : []).map(({ handle }) => handle);
             yield Promise.all(navigation_handles.map(handle => limit(() => fetchFromRemote(site_id, 'navigation', handle, undefined, {
                 silentNotFound: true,

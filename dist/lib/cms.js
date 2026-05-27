@@ -168,23 +168,25 @@ function createPopulatedNavigation(handle_1) {
         }
         const pages_data = getFileContent(temporary_folder, 'collection', 'pages.populated', false);
         const pages = (_a = pages_data === null || pages_data === void 0 ? void 0 : pages_data.payload) !== null && _a !== void 0 ? _a : [];
+        const pages_by_id = new Map(pages.map(p => [p.id, p]));
         const pages_by_slug = new Map(pages.map(p => [p.slug, p]));
+        // `entry` is a page id, `slug` falls back when no entry is linked
         const mapItem = (item) => {
-            var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;
+            var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r;
             const page = item.entry
-                ? pages_by_slug.get(item.entry)
+                ? ((_a = pages_by_id.get(item.entry)) !== null && _a !== void 0 ? _a : pages_by_slug.get(item.entry))
                 : item.slug
                     ? pages_by_slug.get(item.slug)
                     : undefined;
-            const child_items = (_b = (_a = item.children) !== null && _a !== void 0 ? _a : item.items) !== null && _b !== void 0 ? _b : [];
-            const is_external = (_d = (_c = item.url) === null || _c === void 0 ? void 0 : _c.startsWith('http')) !== null && _d !== void 0 ? _d : false;
+            const child_items = (_c = (_b = item.children) !== null && _b !== void 0 ? _b : item.items) !== null && _c !== void 0 ? _c : [];
+            const is_external = (_e = (_d = item.url) === null || _d === void 0 ? void 0 : _d.startsWith('http')) !== null && _e !== void 0 ? _e : false;
             return {
-                id: (_f = (_e = page === null || page === void 0 ? void 0 : page.id) !== null && _e !== void 0 ? _e : item.id) !== null && _f !== void 0 ? _f : null,
-                slug: (_h = (_g = page === null || page === void 0 ? void 0 : page.slug) !== null && _g !== void 0 ? _g : item.slug) !== null && _h !== void 0 ? _h : null,
-                title: (_k = (_j = item.title) !== null && _j !== void 0 ? _j : page === null || page === void 0 ? void 0 : page.title) !== null && _k !== void 0 ? _k : null,
-                aria_label: (_o = (_m = (_l = item.aria_label) !== null && _l !== void 0 ? _l : item.title) !== null && _m !== void 0 ? _m : page === null || page === void 0 ? void 0 : page.title) !== null && _o !== void 0 ? _o : null,
-                target: (_p = item.target) !== null && _p !== void 0 ? _p : (is_external ? '_blank' : '_self'),
-                full_url: (_q = page === null || page === void 0 ? void 0 : page.full_url) !== null && _q !== void 0 ? _q : buildFullUrl(item.url, site_id),
+                id: (_g = (_f = page === null || page === void 0 ? void 0 : page.id) !== null && _f !== void 0 ? _f : item.id) !== null && _g !== void 0 ? _g : null,
+                slug: (_j = (_h = page === null || page === void 0 ? void 0 : page.slug) !== null && _h !== void 0 ? _h : item.slug) !== null && _j !== void 0 ? _j : null,
+                title: (_l = (_k = item.title) !== null && _k !== void 0 ? _k : page === null || page === void 0 ? void 0 : page.title) !== null && _l !== void 0 ? _l : null,
+                aria_label: (_p = (_o = (_m = item.aria_label) !== null && _m !== void 0 ? _m : item.title) !== null && _o !== void 0 ? _o : page === null || page === void 0 ? void 0 : page.title) !== null && _p !== void 0 ? _p : null,
+                target: (_q = item.target) !== null && _q !== void 0 ? _q : (is_external ? '_blank' : '_self'),
+                full_url: (_r = page === null || page === void 0 ? void 0 : page.full_url) !== null && _r !== void 0 ? _r : buildFullUrl(item.url, site_id),
                 children: Array.isArray(child_items) ? child_items.map(mapItem) : [],
             };
         };

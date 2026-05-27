@@ -17721,9 +17721,10 @@ async function createPopulatedNavigation(handle, site_id = "default") {
     false
   );
   const pages = pages_data?.payload ?? [];
+  const pages_by_id = new Map(pages.map((p) => [p.id, p]));
   const pages_by_slug = new Map(pages.map((p) => [p.slug, p]));
   const mapItem = (item) => {
-    const page = item.entry ? pages_by_slug.get(item.entry) : item.slug ? pages_by_slug.get(item.slug) : void 0;
+    const page = item.entry ? pages_by_id.get(item.entry) ?? pages_by_slug.get(item.entry) : item.slug ? pages_by_slug.get(item.slug) : void 0;
     const child_items = item.children ?? item.items ?? [];
     const is_external = item.url?.startsWith("http") ?? false;
     return {

@@ -275,11 +275,13 @@ async function createPopulatedNavigation(
     false,
   )
   const pages: PageMappingType[] = pages_data?.payload ?? []
+  const pages_by_id = new Map(pages.map(p => [p.id, p]))
   const pages_by_slug = new Map(pages.map(p => [p.slug, p]))
 
+  // `entry` is a page id, `slug` falls back when no entry is linked
   const mapItem = (item: NavItemRaw): NavItemPopulated => {
     const page = item.entry
-      ? pages_by_slug.get(item.entry)
+      ? (pages_by_id.get(item.entry) ?? pages_by_slug.get(item.entry))
       : item.slug
         ? pages_by_slug.get(item.slug)
         : undefined

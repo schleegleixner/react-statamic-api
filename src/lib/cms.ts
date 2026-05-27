@@ -117,15 +117,56 @@ async function createPopulatedCollection(
     return null
   }
 
+  // Statamic only returns the slug-based `url` for each entry; the parent
+  // hierarchy is not pre-resolved. Walk the parent chain ourselves to build
+  // the full nested path before populating entries.
+  const resolved_path_by_id = new Map<string, string>()
+  if (collection_id === 'pages' && Array.isArray(collection)) {
+    const pages_by_id = new Map<string, any>(
+      collection.map((p: any) => [p.id, p]),
+    )
+
+    const resolvePath = (entry: any, visited: Set<string>): string => {
+      if (!entry?.url) return ''
+      if (visited.has(entry.id)) return entry.url
+      visited.add(entry.id)
+
+      const segment = entry.url.replace(/^\/+|\/+$/g, '')
+      const parent_entry = entry.parent?.id
+        ? pages_by_id.get(entry.parent.id)
+        : null
+
+      if (!parent_entry) {
+        return segment ? `/${segment}` : '/'
+      }
+
+      const parent_path =
+        resolved_path_by_id.get(parent_entry.id) ??
+        resolvePath(parent_entry, visited)
+
+      if (!segment) return parent_path
+      return parent_path === '/' ? `/${segment}` : `${parent_path}/${segment}`
+    }
+
+    for (const entry of collection) {
+      if (entry?.id) {
+        resolved_path_by_id.set(entry.id, resolvePath(entry, new Set()))
+      }
+    }
+  }
+
   await Promise.all(
     collection.map(async (entry: any) => {
       // url rewrites (add site_id in front)
       if (entry.url) {
         entry.site_id = site_id
-        entry.full_url = buildFullUrl(entry.url, site_id)
+        const resolved_url = resolved_path_by_id.get(entry.id) ?? entry.url
+        entry.full_url = buildFullUrl(resolved_url, site_id)
 
         if (entry.parent) {
-          entry.parent.full_url = buildFullUrl(entry.parent.url, site_id)
+          const parent_resolved =
+            resolved_path_by_id.get(entry.parent.id) ?? entry.parent.url
+          entry.parent.full_url = buildFullUrl(parent_resolved, site_id)
         }
       }
 

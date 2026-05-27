@@ -77,19 +77,52 @@ function createPopulatedCollection(collection_id_1) {
             console.warn(`⚠️ Collection not found: ${collection_id} (${temporary_folder})`, collection);
             return null;
         }
+        // Statamic only returns the slug-based `url` for each entry; the parent
+        // hierarchy is not pre-resolved. Walk the parent chain ourselves to build
+        // the full nested path before populating entries.
+        const resolved_path_by_id = new Map();
+        if (collection_id === 'pages' && Array.isArray(collection)) {
+            const pages_by_id = new Map(collection.map((p) => [p.id, p]));
+            const resolvePath = (entry, visited) => {
+                var _a, _b;
+                if (!(entry === null || entry === void 0 ? void 0 : entry.url))
+                    return '';
+                if (visited.has(entry.id))
+                    return entry.url;
+                visited.add(entry.id);
+                const segment = entry.url.replace(/^\/+|\/+$/g, '');
+                const parent_entry = ((_a = entry.parent) === null || _a === void 0 ? void 0 : _a.id)
+                    ? pages_by_id.get(entry.parent.id)
+                    : null;
+                if (!parent_entry) {
+                    return segment ? `/${segment}` : '/';
+                }
+                const parent_path = (_b = resolved_path_by_id.get(parent_entry.id)) !== null && _b !== void 0 ? _b : resolvePath(parent_entry, visited);
+                if (!segment)
+                    return parent_path;
+                return parent_path === '/' ? `/${segment}` : `${parent_path}/${segment}`;
+            };
+            for (const entry of collection) {
+                if (entry === null || entry === void 0 ? void 0 : entry.id) {
+                    resolved_path_by_id.set(entry.id, resolvePath(entry, new Set()));
+                }
+            }
+        }
         yield Promise.all(collection.map((entry) => __awaiter(this, void 0, void 0, function* () {
-            var _a, _b, _c, _d;
+            var _a, _b, _c, _d, _e, _f;
             // url rewrites (add site_id in front)
             if (entry.url) {
                 entry.site_id = site_id;
-                entry.full_url = buildFullUrl(entry.url, site_id);
+                const resolved_url = (_a = resolved_path_by_id.get(entry.id)) !== null && _a !== void 0 ? _a : entry.url;
+                entry.full_url = buildFullUrl(resolved_url, site_id);
                 if (entry.parent) {
-                    entry.parent.full_url = buildFullUrl(entry.parent.url, site_id);
+                    const parent_resolved = (_b = resolved_path_by_id.get(entry.parent.id)) !== null && _b !== void 0 ? _b : entry.parent.url;
+                    entry.parent.full_url = buildFullUrl(parent_resolved, site_id);
                 }
             }
             // tiles
             if (entry.tile_id) {
-                entry.content = yield ((_a = getFileContent(temporary_folder, 'content', 'tile', entry.tile_id)) === null || _a === void 0 ? void 0 : _a.payload);
+                entry.content = yield ((_c = getFileContent(temporary_folder, 'content', 'tile', entry.tile_id)) === null || _c === void 0 ? void 0 : _c.payload);
                 if (Array.isArray(entry.content.datasources)) {
                     entry.content.datasources.forEach((datasource) => {
                         // sanitize columns
@@ -105,7 +138,7 @@ function createPopulatedCollection(collection_id_1) {
             }
             // pages
             if (collection_id === 'pages') {
-                entry.content = yield ((_b = getFileContent(temporary_folder, 'content', 'page', entry.slug)) === null || _b === void 0 ? void 0 : _b.payload);
+                entry.content = yield ((_d = getFileContent(temporary_folder, 'content', 'page', entry.slug)) === null || _d === void 0 ? void 0 : _d.payload);
             }
             // sources
             if (entry.file_name) {
@@ -113,8 +146,8 @@ function createPopulatedCollection(collection_id_1) {
                 const timeline = getTimeline(content);
                 entry.content = content;
                 entry.timeline = timeline;
-                entry.entry_count = (_c = timeline.length) !== null && _c !== void 0 ? _c : 0;
-                entry.columns = (_d = entry.columns) === null || _d === void 0 ? void 0 : _d.map((column) => {
+                entry.entry_count = (_e = timeline.length) !== null && _e !== void 0 ? _e : 0;
+                entry.columns = (_f = entry.columns) === null || _f === void 0 ? void 0 : _f.map((column) => {
                     return sanitizeString(column);
                 });
             }

@@ -10,7 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import url from 'url';
 import { readCache } from '../lib/cache';
 import { fetchJSON, getCacheEndpoint } from '../utils/api';
-import { readLocalStorage, writeLocalStorage } from '../utils/localstorage';
+import { readLocalStorage, removeLocalStorage, writeLocalStorage, } from '../utils/localstorage';
 function handleRequest() {
     return __awaiter(this, arguments, void 0, function* (site_id = 'default', content_type = 'content', collection_id = 'tile', id = false) {
         const key = site_id + '.' + content_type + '.' + collection_id + '.' + id;
@@ -117,19 +117,32 @@ export function getCompleteTileset() {
 }
 export function getImageMeta(file_name_1, site_id_1) {
     return __awaiter(this, arguments, void 0, function* (file_name, site_id, use_cache = true) {
+        const cache_key = 'collection.images';
         // check if the image is in the cache
-        let images = use_cache ? readLocalStorage('collection.images', site_id) : null;
+        let images = use_cache
+            ? readLocalStorage(cache_key, site_id)
+            : null;
+        let from_cache = !!images;
         // if the image is not in the cache, get it from the collection
         if (!images) {
             images = (yield getCollection('images', site_id));
             if (images) {
-                writeLocalStorage('collection.images', images, 10, site_id); // cache for 10 minutes
+                writeLocalStorage(cache_key, images, 10, site_id); // cache for 10 minutes
             }
         }
         if (!images || images.length === 0) {
             return false;
         }
-        const image = images.find((img) => img.file_name === file_name);
+        let image = images.find((img) => img.file_name === file_name);
+        // cache miss on a known-good file? cache might be stale, refetch once
+        if (!image && from_cache) {
+            removeLocalStorage(cache_key, site_id);
+            const fresh = (yield getCollection('images', site_id));
+            if (fresh && fresh.length > 0) {
+                writeLocalStorage(cache_key, fresh, 10, site_id);
+                image = fresh.find((img) => img.file_name === file_name);
+            }
+        }
         return image !== null && image !== void 0 ? image : false;
     });
 }

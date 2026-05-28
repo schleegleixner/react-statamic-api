@@ -24,6 +24,19 @@ export function readLocalStorage(key, site_id = 'default') {
         return null;
     }
 }
+export function removeLocalStorage(key, site_id = 'default') {
+    if (site_id === 'preview') {
+        return false;
+    }
+    const versioned_key = key + '_' + getAppVersion() + '_' + site_id;
+    try {
+        localStorage.removeItem(versioned_key);
+        return true;
+    }
+    catch (_a) {
+        return false;
+    }
+}
 export function writeLocalStorage(key, payload, lifetime = 30, site_id = 'default') {
     const versioned_key = key + '_' + getAppVersion() + '_' + site_id;
     try {

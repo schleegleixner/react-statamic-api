@@ -2,7 +2,11 @@ import url from 'url'
 import { readCache } from '../lib/cache'
 import { fetchJSON, getCacheEndpoint } from '../utils/api'
 import { TileDatasourceType, TileDataType } from '../types/tiles'
-import { readLocalStorage, writeLocalStorage } from '../utils/localstorage'
+import {
+  readLocalStorage,
+  removeLocalStorage,
+  writeLocalStorage,
+} from '../utils/localstorage'
 import { ImageMetaInterface } from '../types/files'
 import { NavigationType } from '../types'
 
@@ -179,18 +183,20 @@ export async function getImageMeta(
   site_id?: string,
   use_cache: boolean = true,
 ): Promise<ImageMetaInterface | false> {
+  const cache_key = 'collection.images'
+
   // check if the image is in the cache
-  let images = use_cache ? readLocalStorage(
-    'collection.images',
-    site_id,
-  ) as ImageMetaInterface[] : null
+  let images = use_cache
+    ? (readLocalStorage(cache_key, site_id) as ImageMetaInterface[])
+    : null
+  let from_cache = !!images
 
   // if the image is not in the cache, get it from the collection
   if (!images) {
     images = (await getCollection('images', site_id)) as ImageMetaInterface[]
 
     if (images) {
-      writeLocalStorage('collection.images', images, 10, site_id) // cache for 10 minutes
+      writeLocalStorage(cache_key, images, 10, site_id) // cache for 10 minutes
     }
   }
 
@@ -198,9 +204,25 @@ export async function getImageMeta(
     return false
   }
 
-  const image = images.find(
+  let image = images.find(
     (img: ImageMetaInterface) => img.file_name === file_name,
   )
+
+  // cache miss on a known-good file? cache might be stale, refetch once
+  if (!image && from_cache) {
+    removeLocalStorage(cache_key, site_id)
+    const fresh = (await getCollection(
+      'images',
+      site_id,
+    )) as ImageMetaInterface[]
+
+    if (fresh && fresh.length > 0) {
+      writeLocalStorage(cache_key, fresh, 10, site_id)
+      image = fresh.find(
+        (img: ImageMetaInterface) => img.file_name === file_name,
+      )
+    }
+  }
 
   return image ?? false
 }

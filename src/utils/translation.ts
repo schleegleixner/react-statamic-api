@@ -11,11 +11,12 @@ export const setSiteId = (site_id: string) => {
   active_site_id = site_id || ''
 }
 
-export const getGlobalString = (key: string, fallback?: string): string => {
+export const getGlobalString = (key: string, fallback?: string | null): string => {
   if (
     Object.keys(active_translations).length === 0 ||
     !(key in active_translations)
   ) {
+    if (fallback === null || fallback === '') return ''
     return fallback || `[${key}]`
   }
 

@@ -9,6 +9,8 @@ export const setSiteId = (site_id) => {
 export const getGlobalString = (key, fallback) => {
     if (Object.keys(active_translations).length === 0 ||
         !(key in active_translations)) {
+        if (fallback === null || fallback === '')
+            return '';
         return fallback || `[${key}]`;
     }
     return active_translations[key];

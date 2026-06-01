@@ -18,7 +18,7 @@ function getMaxDecimals(values) {
 }
 export function getTimeline(data, key = 'INDEX') {
     var _a;
-    if (!data || data.length === 0) {
+    if (!Array.isArray(data) || data.length === 0) {
         return [];
     }
     // normalize the key to be case-insensitive

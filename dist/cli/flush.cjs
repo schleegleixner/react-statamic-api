@@ -18856,6 +18856,15 @@ async function fetchFromRemote(site_id = "default", content_type = "content", co
   );
   return payload;
 }
+async function fetchGlobalHandles(site_id = "default") {
+  const base_url = getCMSEndpoint();
+  const endpoint = `${base_url}globals?site_id=${site_id}&secret=${process.env.API_SECRET}`;
+  const payload = await fetchJSON(endpoint, { silentNotFound: true });
+  if (!Array.isArray(payload)) {
+    return [];
+  }
+  return payload.map((entry) => entry?.handle).filter((handle) => typeof handle === "string");
+}
 async function fetchContent(site_id = "default", collection_id, id) {
   const singular_id = collection_id.endsWith("s") ? collection_id.slice(0, -1) : collection_id;
   return await fetchFromRemote(site_id, "content", singular_id, id);
@@ -19034,7 +19043,7 @@ async function rebuildCache(sites) {
 async function fetchForSite(site_id) {
   const collections = process.env.SET_COLLECTIONS ? process.env.SET_COLLECTIONS.split(",") : ["pages", "sources", "images", "tiles"];
   const taxonomies = process.env.SET_TAXONOMIES ? process.env.SET_TAXONOMIES.split(",") : ["icons", "action_fields", "sdg_targets"];
-  const global2 = process.env.SET_GLOBAL ? process.env.SET_GLOBAL.split(",") : ["seo", "footer", "strings"];
+  const global2 = process.env.SET_GLOBAL ? process.env.SET_GLOBAL.split(",") : await fetchGlobalHandles(site_id);
   const data = {};
   const results = [];
   const limit = pLimit(10);

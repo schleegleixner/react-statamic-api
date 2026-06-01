@@ -13,7 +13,7 @@
  * Optionale Umgebungsvariablen:
  *   SET_COLLECTIONS – Kommagetrennte Collections (default: pages,sources,images,tiles)
  *   SET_TAXONOMIES  – Kommagetrennte Taxonomien (default: icons,action_fields,sdg_targets)
- *   SET_GLOBAL      – Kommagetrennte Globals (default: seo,footer,strings)
+ *   SET_GLOBAL      – Kommagetrennte Globals (Fallback: /globals API-Endpunkt)
  */
 
 import 'dotenv/config'

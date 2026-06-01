@@ -59,6 +59,21 @@ function fetchFromRemote() {
         return payload;
     });
 }
+// Fetch the list of available global handles from the /globals API endpoint.
+// Used as a fallback when SET_GLOBAL is not configured via env.
+function fetchGlobalHandles() {
+    return __awaiter(this, arguments, void 0, function* (site_id = 'default') {
+        const base_url = getCMSEndpoint();
+        const endpoint = `${base_url}globals?site_id=${site_id}&secret=${process.env.API_SECRET}`;
+        const payload = (yield fetchJSON(endpoint, { silentNotFound: true }));
+        if (!Array.isArray(payload)) {
+            return [];
+        }
+        return payload
+            .map(entry => entry === null || entry === void 0 ? void 0 : entry.handle)
+            .filter((handle) => typeof handle === 'string');
+    });
+}
 function fetchContent() {
     return __awaiter(this, arguments, void 0, function* (site_id = 'default', collection_id, id) {
         const singular_id = collection_id.endsWith('s')
@@ -275,9 +290,11 @@ function fetchForSite(site_id) {
         const taxonomies = process.env.SET_TAXONOMIES
             ? process.env.SET_TAXONOMIES.split(',')
             : ['icons', 'action_fields', 'sdg_targets'];
+        // Globals can be set via env (SET_GLOBAL). When the env is missing, fall
+        // back to the /globals API endpoint, which returns the available handles.
         const global = process.env.SET_GLOBAL
             ? process.env.SET_GLOBAL.split(',')
-            : ['seo', 'footer', 'strings'];
+            : yield fetchGlobalHandles(site_id);
         const data = {};
         const results = [];
         const limit = pLimit(10); // limit concurrent requests

@@ -88,6 +88,27 @@ async function fetchFromRemote(
   return payload
 }
 
+// Fetch the list of available global handles from the /globals API endpoint.
+// Used as a fallback when SET_GLOBAL is not configured via env.
+async function fetchGlobalHandles(
+  site_id: string = 'default',
+): Promise<string[]> {
+  const base_url = getCMSEndpoint()
+  const endpoint = `${base_url}globals?site_id=${site_id}&secret=${process.env.API_SECRET}`
+
+  const payload = (await fetchJSON(endpoint, { silentNotFound: true })) as
+    | { handle: string }[]
+    | null
+
+  if (!Array.isArray(payload)) {
+    return []
+  }
+
+  return payload
+    .map(entry => entry?.handle)
+    .filter((handle): handle is string => typeof handle === 'string')
+}
+
 async function fetchContent(
   site_id: string = 'default',
   collection_id: string,
@@ -407,9 +428,11 @@ async function fetchForSite(site_id: string) {
   const taxonomies = process.env.SET_TAXONOMIES
     ? process.env.SET_TAXONOMIES.split(',')
     : ['icons', 'action_fields', 'sdg_targets']
+  // Globals can be set via env (SET_GLOBAL). When the env is missing, fall
+  // back to the /globals API endpoint, which returns the available handles.
   const global = process.env.SET_GLOBAL
     ? process.env.SET_GLOBAL.split(',')
-    : ['seo', 'footer', 'strings']
+    : await fetchGlobalHandles(site_id)
   const data: any = {}
   const results: RebuildResult[] = []
 

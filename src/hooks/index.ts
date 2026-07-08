@@ -5,6 +5,7 @@ export {
   type LiveDataStatus,
 } from './useLiveData'
 export { default as useOnlineStatus } from './useOnlineStatus'
+export { default as useIsPwa } from './useIsPwa'
 export { default as useTileset } from './useTileset'
 export { default as useNavigation } from './useNavigation'
 export { default as useBreadcrumbs } from './useBreadcrumbs'

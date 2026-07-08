@@ -35,22 +35,22 @@ export default function StaleBadge({
 }: StaleBadgeProps) {
   const merged_labels: Required<StaleBadgeLabels> = {
     updated: labels?.updated ?? 'Stand',
-    stale: labels?.stale ?? 'veraltet',
+    stale: labels?.stale ?? 'Diese Daten sind möglicherweise veraltet',
     offline: labels?.offline ?? 'Offline-Daten',
   }
 
   const time_label =
     typeof cached_at === 'number'
       ? new Intl.DateTimeFormat(locale, {
-          day: '2-digit',
-          month: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-        }).format(new Date(cached_at))
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+      }).format(new Date(cached_at))
       : null
 
   const base =
-    'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium'
+    'text-center items-center gap-1 rounded-full py-2 px-4 text-xs font-medium bg-amber-100 text-amber-800'
   const tone = is_stale
     ? 'bg-amber-100 text-amber-800'
     : 'bg-neutral-100 text-neutral-500'
@@ -58,7 +58,7 @@ export default function StaleBadge({
 
   const text = is_stale
     ? time_label
-      ? `${merged_labels.stale} · ${merged_labels.updated} ${time_label}`
+      ? `${merged_labels.stale} · ${merged_labels.updated} ${time_label} Uhr`
       : merged_labels.offline
     : time_label
       ? `${merged_labels.updated} ${time_label}`
@@ -66,22 +66,6 @@ export default function StaleBadge({
 
   return (
     <span className={class_name} title={text}>
-      {is_stale ? (
-        <svg
-          aria-hidden="true"
-          className="h-3 w-3"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          viewBox="0 0 24 24"
-        >
-          <path
-            d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      ) : null}
       {text}
     </span>
   )

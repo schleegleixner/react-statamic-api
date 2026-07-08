@@ -50,7 +50,7 @@ export default function StaleBadge({
       : null
 
   const base =
-    'text-center items-center gap-1 rounded-full py-2 px-4 text-xs font-medium bg-amber-500 text-white'
+    'block text-center items-center gap-1 rounded-full py-2 px-4 text-xs font-medium bg-amber-500 text-white'
   const tone = is_stale
     ? 'bg-amber-500 text-white'
     : 'bg-neutral-100 text-neutral-500'

@@ -1,6 +1,6 @@
 {
   "name": "@schleegleixner/react-statamic-api",
-  "version": "1.9.1",
+  "version": "1.10.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
@@ -11,7 +11,18 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.js"
-    }
+    },
+    "./pwa/next": {
+      "types": "./dist/pwa/next.d.ts",
+      "import": "./dist/pwa/next.js",
+      "require": "./dist/pwa/next.js"
+    },
+    "./pwa/sw": {
+      "types": "./dist/pwa/sw.d.ts",
+      "import": "./dist/pwa/sw.js",
+      "require": "./dist/pwa/sw.js"
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist"
@@ -28,6 +39,8 @@
     "registry": "https://npm.pkg.github.com/"
   },
   "devDependencies": {
+    "@serwist/next": "^9.5.11",
+    "serwist": "^9.5.11",
     "@types/node": "^24.3.1",
     "@types/papaparse": "^5.3.16",
     "@types/react": "^19.1.8",
@@ -60,7 +73,17 @@
     "sharp": "^0.34.3",
     "next": "^16.0.0",
     "react": "^19.1.8",
-    "react-dom": "^19.1.6"
+    "react-dom": "^19.1.6",
+    "@serwist/next": "^9.5.0",
+    "serwist": "^9.5.0"
+  },
+  "peerDependenciesMeta": {
+    "@serwist/next": {
+      "optional": true
+    },
+    "serwist": {
+      "optional": true
+    }
   },
   "browser": {
     "fs": false,

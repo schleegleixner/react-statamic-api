@@ -1,0 +1,68 @@
+import type { MetadataRoute } from 'next'
+
+type Manifest = MetadataRoute.Manifest
+
+export interface CreateManifestOptions extends Partial<Manifest> {
+  /** App name shown on install prompts. */
+  name: string
+  /** Short name for the home screen. Defaults to `name`. */
+  short_name?: string
+  /** Primary brand color. Default: `#000000`. */
+  theme_color?: string
+  /** Splash background color. Defaults to `theme_color`. */
+  background_color?: string
+  /**
+   * Base path for the default icon set. Icons are expected at
+   * `${icon_path}/android-chrome-192x192.png`, `-512x512.png` and
+   * `-maskable-512x512.png`. Default: `/favicon`.
+   */
+  icon_path?: string
+}
+
+/**
+ * Builds a Next.js App Router manifest object with reasonable PWA defaults.
+ * Every field can be overridden. This helper has no Serwist dependency, so it is
+ * safe to import from the main entry point (`app/manifest.ts` in the consumer).
+ */
+export function createManifest(options: CreateManifestOptions): Manifest {
+  const {
+    name,
+    short_name = name,
+    theme_color = '#000000',
+    background_color,
+    icon_path = '/favicon',
+    icons,
+    ...rest
+  } = options
+
+  return {
+    name,
+    short_name,
+    start_url: '/',
+    display: 'standalone',
+    orientation: 'portrait',
+    theme_color,
+    background_color: background_color ?? theme_color,
+    icons: icons ?? [
+      {
+        src: `${icon_path}/android-chrome-192x192.png`,
+        sizes: '192x192',
+        type: 'image/png',
+      },
+      {
+        src: `${icon_path}/android-chrome-512x512.png`,
+        sizes: '512x512',
+        type: 'image/png',
+      },
+      {
+        src: `${icon_path}/android-chrome-maskable-512x512.png`,
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'maskable',
+      },
+    ],
+    ...rest,
+  }
+}
+
+export default createManifest

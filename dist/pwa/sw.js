@@ -23,6 +23,23 @@ export function createRuntimeCaching(options = {}) {
     const { liveDataMatcher = /\/api\/(data|cache)/, weatherHost = 'api.brightsky.dev', networkTimeoutSeconds = 10, extraRuntimeCaching = [], } = options;
     const custom = [
         {
+            // Document navigations: keep the last successful HTML so previously
+            // visited pages render on a cold offline start. Placed before the
+            // Next.js defaults because their HTML matcher relies on a request
+            // `Content-Type` header that navigations never send.
+            matcher: ({ request, sameOrigin }) => sameOrigin && request.mode === 'navigate',
+            handler: new NetworkFirst({
+                cacheName: 'rsa-pages',
+                networkTimeoutSeconds,
+                plugins: [
+                    new ExpirationPlugin({
+                        maxEntries: 64,
+                        maxAgeSeconds: 7 * 24 * 60 * 60,
+                    }),
+                ],
+            }),
+        },
+        {
             matcher: ({ url }) => liveDataMatcher.test(url.pathname),
             handler: new NetworkFirst({
                 cacheName: 'rsa-live-data',
@@ -68,13 +85,23 @@ export function createRuntimeCaching(options = {}) {
  * `app/sw.ts` only needs `setupServiceWorker()`.
  */
 export function setupServiceWorker(options = {}) {
-    const { runtimeCaching, clientsClaim = true, skipWaiting = true, navigationPreload = true } = options, runtimeOptions = __rest(options, ["runtimeCaching", "clientsClaim", "skipWaiting", "navigationPreload"]);
+    const { runtimeCaching, clientsClaim = true, skipWaiting = true, navigationPreload = true, offlineFallback = '/~offline' } = options, runtimeOptions = __rest(options, ["runtimeCaching", "clientsClaim", "skipWaiting", "navigationPreload", "offlineFallback"]);
     const serwist = new Serwist({
         precacheEntries: self.__SW_MANIFEST,
         skipWaiting,
         clientsClaim,
         navigationPreload,
         runtimeCaching: runtimeCaching !== null && runtimeCaching !== void 0 ? runtimeCaching : createRuntimeCaching(runtimeOptions),
+        fallbacks: offlineFallback
+            ? {
+                entries: [
+                    {
+                        url: offlineFallback,
+                        matcher: ({ request }) => request.destination === 'document',
+                    },
+                ],
+            }
+            : undefined,
     });
     serwist.addEventListeners();
     return serwist;

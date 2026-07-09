@@ -35,6 +35,13 @@ export interface SetupServiceWorkerOptions extends RuntimeCachingOptions {
     skipWaiting?: boolean;
     /** Use navigation preload. Default: `true`. */
     navigationPreload?: boolean;
+    /**
+     * Precached URL served for document navigations when both network and
+     * runtime cache miss (e.g. a cold offline start of a never-visited route).
+     * The consumer must ship this as a static, precached route. Set to `false`
+     * to disable. Default: `/~offline`.
+     */
+    offlineFallback?: string | false;
 }
 /**
  * One-call service worker bootstrap for consumer projects. A consumer's

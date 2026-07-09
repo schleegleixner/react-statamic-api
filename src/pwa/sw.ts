@@ -45,6 +45,24 @@ export function createRuntimeCaching(
 
   const custom: RuntimeCaching[] = [
     {
+      // Document navigations: keep the last successful HTML so previously
+      // visited pages render on a cold offline start. Placed before the
+      // Next.js defaults because their HTML matcher relies on a request
+      // `Content-Type` header that navigations never send.
+      matcher: ({ request, sameOrigin }) =>
+        sameOrigin && request.mode === 'navigate',
+      handler: new NetworkFirst({
+        cacheName: 'rsa-pages',
+        networkTimeoutSeconds,
+        plugins: [
+          new ExpirationPlugin({
+            maxEntries: 64,
+            maxAgeSeconds: 7 * 24 * 60 * 60,
+          }),
+        ],
+      }),
+    },
+    {
       matcher: ({ url }) => liveDataMatcher.test(url.pathname),
       handler: new NetworkFirst({
         cacheName: 'rsa-live-data',
@@ -97,6 +115,13 @@ export interface SetupServiceWorkerOptions extends RuntimeCachingOptions {
   skipWaiting?: boolean
   /** Use navigation preload. Default: `true`. */
   navigationPreload?: boolean
+  /**
+   * Precached URL served for document navigations when both network and
+   * runtime cache miss (e.g. a cold offline start of a never-visited route).
+   * The consumer must ship this as a static, precached route. Set to `false`
+   * to disable. Default: `/~offline`.
+   */
+  offlineFallback?: string | false
 }
 
 /**
@@ -111,6 +136,7 @@ export function setupServiceWorker(
     clientsClaim = true,
     skipWaiting = true,
     navigationPreload = true,
+    offlineFallback = '/~offline',
     ...runtimeOptions
   } = options
 
@@ -120,6 +146,16 @@ export function setupServiceWorker(
     clientsClaim,
     navigationPreload,
     runtimeCaching: runtimeCaching ?? createRuntimeCaching(runtimeOptions),
+    fallbacks: offlineFallback
+      ? {
+          entries: [
+            {
+              url: offlineFallback,
+              matcher: ({ request }) => request.destination === 'document',
+            },
+          ],
+        }
+      : undefined,
   })
 
   serwist.addEventListeners()

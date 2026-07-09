@@ -38,8 +38,11 @@ export interface SetupServiceWorkerOptions extends RuntimeCachingOptions {
     /**
      * Precached URL served for document navigations when both network and
      * runtime cache miss (e.g. a cold offline start of a never-visited route).
-     * The consumer must ship this as a static, precached route. Set to `false`
-     * to disable. Default: `/~offline`.
+     * The URL must resolve to a precached entry, so a self-contained static file
+     * in `public/` (e.g. `/offline.html`) is the most robust choice: it is always
+     * part of the precache manifest and is not affected by middleware rewrites or
+     * app-router prerender timing. Set to `false` to disable. Default:
+     * `/offline.html`.
      */
     offlineFallback?: string | false;
 }

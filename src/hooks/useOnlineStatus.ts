@@ -3,22 +3,54 @@
 import { useEffect, useState } from 'react'
 
 /**
- * Reactive online/offline flag based on `navigator.onLine` and the
- * `online`/`offline` window events. SSR-safe (starts optimistic as `true`).
+ * Reactive online/offline flag. Combines `navigator.onLine` with an active
+ * connectivity probe, because `navigator.onLine` only reflects a network
+ * interface, not real reachability (e.g. a PWA served from the service worker
+ * cache, captive portals, or DevTools service-worker offline emulation all
+ * leave it `true`). The probe uses a unique cache-busting query so it always
+ * hits the network and bypasses any NetworkFirst service-worker cache; a failed
+ * request means we are effectively offline. SSR-safe (starts optimistic).
  */
 export default function useOnlineStatus(): boolean {
   const [is_online, setIsOnline] = useState(true)
 
   useEffect(() => {
-    const update = () => setIsOnline(navigator.onLine)
-    update()
+    let cancelled = false
 
-    window.addEventListener('online', update)
-    window.addEventListener('offline', update)
+    const probe = async () => {
+      if (!navigator.onLine) {
+        if (!cancelled) setIsOnline(false)
+        return
+      }
+
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 5000)
+
+      try {
+        await fetch(`/manifest.webmanifest?__rsa_ping=${Date.now()}`, {
+          method: 'GET',
+          cache: 'no-store',
+          signal: controller.signal,
+        })
+        if (!cancelled) setIsOnline(true)
+      } catch {
+        if (!cancelled) setIsOnline(false)
+      } finally {
+        clearTimeout(timeout)
+      }
+    }
+
+    const goOffline = () => setIsOnline(false)
+
+    probe()
+
+    window.addEventListener('online', probe)
+    window.addEventListener('offline', goOffline)
 
     return () => {
-      window.removeEventListener('online', update)
-      window.removeEventListener('offline', update)
+      cancelled = true
+      window.removeEventListener('online', probe)
+      window.removeEventListener('offline', goOffline)
     }
   }, [])
 

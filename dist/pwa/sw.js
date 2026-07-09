@@ -85,7 +85,7 @@ export function createRuntimeCaching(options = {}) {
  * `app/sw.ts` only needs `setupServiceWorker()`.
  */
 export function setupServiceWorker(options = {}) {
-    const { runtimeCaching, clientsClaim = true, skipWaiting = true, navigationPreload = true, offlineFallback = '/~offline' } = options, runtimeOptions = __rest(options, ["runtimeCaching", "clientsClaim", "skipWaiting", "navigationPreload", "offlineFallback"]);
+    const { runtimeCaching, clientsClaim = true, skipWaiting = true, navigationPreload = true, offlineFallback = '/offline.html' } = options, runtimeOptions = __rest(options, ["runtimeCaching", "clientsClaim", "skipWaiting", "navigationPreload", "offlineFallback"]);
     const serwist = new Serwist({
         precacheEntries: self.__SW_MANIFEST,
         skipWaiting,

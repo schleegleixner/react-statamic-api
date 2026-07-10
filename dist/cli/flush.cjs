@@ -13774,7 +13774,7 @@ var require_papaparse = __commonJS({
 })();
 
 // src/lib/cache.ts
-var fs2 = __toESM(require("fs"));
+var fs3 = __toESM(require("fs"));
 var import_https3 = __toESM(require("https"));
 var import_path2 = __toESM(require("path"));
 
@@ -18885,6 +18885,21 @@ async function fetchFile(endpoint) {
   }
 }
 
+// src/response/responseContent.ts
+var import_fs2 = __toESM(require("fs"));
+function getFileContent(site_id, content_type, folder, id) {
+  try {
+    const cache_path = getCachedFilePath(site_id, content_type, folder, id);
+    if (!import_fs2.default.existsSync(cache_path)) {
+      return false;
+    }
+    const cache_data = import_fs2.default.readFileSync(cache_path, "utf8");
+    return JSON.parse(cache_data);
+  } catch {
+    return false;
+  }
+}
+
 // src/lib/cache.ts
 var insecure_agent = new import_https3.default.Agent({
   rejectUnauthorized: false
@@ -18908,9 +18923,11 @@ async function writeContentCache(site_id = "default", content_type, folder_path 
 }
 async function writeFile(file_path, data) {
   try {
-    await fs2.promises.mkdir(import_path2.default.dirname(file_path), { recursive: true });
+    await fs3.promises.mkdir(import_path2.default.dirname(file_path), { recursive: true });
     const file_data = typeof data === "string" ? data : JSON.stringify(data);
-    await fs2.promises.writeFile(file_path, file_data, "utf8");
+    const tmp_path = `${file_path}.${process.pid}.${Date.now()}.tmp`;
+    await fs3.promises.writeFile(tmp_path, file_data, "utf8");
+    await fs3.promises.rename(tmp_path, file_path);
     console.log("\u{1F4BE} File saved:", file_path.split("/cache/")[1]);
     return true;
   } catch (error) {
@@ -18921,8 +18938,8 @@ async function writeFile(file_path, data) {
 async function writeBuffer(file_path, buffer) {
   try {
     file_path = file_path.replace(/\/\//g, "/");
-    await fs2.promises.mkdir(import_path2.default.dirname(file_path), { recursive: true });
-    await fs2.promises.writeFile(file_path, buffer);
+    await fs3.promises.mkdir(import_path2.default.dirname(file_path), { recursive: true });
+    await fs3.promises.writeFile(file_path, buffer);
     console.log("\u{1F4BE} Buffer saved:", file_path.split("/cache/")[1]);
     return true;
   } catch (error) {
@@ -18939,7 +18956,7 @@ var import_path3 = __toESM(require("path"));
 
 // src/utils/import.ts
 var import_papaparse = __toESM(require_papaparse());
-var import_fs2 = __toESM(require("fs"));
+var import_fs3 = __toESM(require("fs"));
 
 // src/utils/sanitize.ts
 function sanitizeString(str) {
@@ -18965,7 +18982,7 @@ var sanitizeNumber = (value, default_value = NaN) => {
 
 // src/utils/import.ts
 function readCSV(file_path) {
-  const file_data = import_fs2.default.readFileSync(file_path, "utf8");
+  const file_data = import_fs3.default.readFileSync(file_path, "utf8");
   const delimiter = ";";
   if (!file_data) {
     return [];
@@ -18978,7 +18995,7 @@ function readCSV(file_path) {
   return filterValidEntries(normalizedResult);
 }
 function readJSON(file_path) {
-  const file_data = import_fs2.default.readFileSync(file_path, "utf8");
+  const file_data = import_fs3.default.readFileSync(file_path, "utf8");
   if (!file_data) {
     return [];
   }
@@ -19234,21 +19251,6 @@ function pLimit(concurrency) {
 function validateConcurrency(concurrency) {
   if (!((Number.isInteger(concurrency) || concurrency === Number.POSITIVE_INFINITY) && concurrency > 0)) {
     throw new TypeError("Expected `concurrency` to be a number from 1 and up");
-  }
-}
-
-// src/response/responseContent.ts
-var import_fs3 = __toESM(require("fs"));
-function getFileContent(site_id, content_type, folder, id) {
-  try {
-    const cache_path = getCachedFilePath(site_id, content_type, folder, id);
-    if (!import_fs3.default.existsSync(cache_path)) {
-      return false;
-    }
-    const cache_data = import_fs3.default.readFileSync(cache_path, "utf8");
-    return JSON.parse(cache_data);
-  } catch {
-    return false;
   }
 }
 

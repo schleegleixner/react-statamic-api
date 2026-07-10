@@ -12,6 +12,7 @@ import https from 'https';
 import path from 'path';
 import { getCachedFilePath } from '../utils/filesystem';
 import { getCacheEndpoint } from '../utils/api';
+import { getFileContent } from '../response/responseContent';
 const insecure_agent = new https.Agent({
     rejectUnauthorized: false,
 });
@@ -57,6 +58,39 @@ export function readApiCache(file_name) {
         return readCache('global', 'data', false, file_name);
     });
 }
+/**
+ * Read an API cache entry straight from disk.
+ *
+ * Unlike `readApiCache`, this deliberately avoids the self-HTTP roundtrip
+ * against `NEXT_PUBLIC_URL/api/cache`. The data route runs inside the same
+ * Next.js server that owns the cache files, so reading the filesystem directly
+ * removes an entire class of failures (DNS/TLS/hairpin/CDN/timeouts) and works
+ * even when the public URL is unreachable from the server itself.
+ *
+ * Handles both cache shapes transparently:
+ *  - wrapped `{ payload, expiry }` files written by this library
+ *  - bare JSON files (e.g. arrays written by external scripts) without expiry
+ */
+export function readApiCacheFile(file_name) {
+    // mirror readApiCache's lookup order: 'api' folder first, 'data' as fallback
+    for (const content_type of ['api', 'data']) {
+        const json = getFileContent('global', content_type, false, file_name);
+        if (json === false) {
+            continue;
+        }
+        const has_wrapper = json !== null &&
+            typeof json === 'object' &&
+            !Array.isArray(json) &&
+            'payload' in json;
+        const expiry = has_wrapper ? json.expiry : false;
+        const expired = typeof expiry === 'number' && Date.now() > expiry;
+        return {
+            data: has_wrapper ? json.payload : json,
+            expired,
+        };
+    }
+    return null;
+}
 // write data to the cache
 function writeCache(file_path_1, data_1) {
     return __awaiter(this, arguments, void 0, function* (file_path, data, lifetime = false) {
@@ -90,8 +124,12 @@ export function writeFile(file_path, data) {
             yield fs.promises.mkdir(path.dirname(file_path), { recursive: true });
             // convert data to string if it's not already
             const file_data = typeof data === 'string' ? data : JSON.stringify(data);
-            // write data to the file
-            yield fs.promises.writeFile(file_path, file_data, 'utf8');
+            // Write to a temp file then rename. rename() is atomic on the same
+            // filesystem, so concurrent readers never observe a half-written
+            // (truncated) file — the classic cause of JSON.parse failures.
+            const tmp_path = `${file_path}.${process.pid}.${Date.now()}.tmp`;
+            yield fs.promises.writeFile(tmp_path, file_data, 'utf8');
+            yield fs.promises.rename(tmp_path, file_path);
             // eslint-disable-next-line no-console
             console.log('💾 File saved:', file_path.split('/cache/')[1]);
             return true;

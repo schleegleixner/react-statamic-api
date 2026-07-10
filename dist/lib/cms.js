@@ -7,7 +7,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { readApiCache, writeApiCache, writeBuffer, writeContentCache, } from '../lib/cache';
+import { readApiCacheFile, writeApiCache, writeBuffer, writeContentCache, } from '../lib/cache';
 import { fetchFile, fetchJSON, getCMSEndpoint } from '../utils/api';
 import path from 'path';
 import { ensureCacheFolder, moveTemporaryFolder, getCachePath, } from '../utils/filesystem';
@@ -217,19 +217,25 @@ function createPopulatedNavigation(handle_1) {
 export function getAPI(api_1) {
     return __awaiter(this, arguments, void 0, function* (api, use_cache = true, lifetime = 6 * 60) {
         const file_name = api.replace(/\//g, '_');
-        if (use_cache) {
-            const cache_data = (yield readApiCache(file_name)) || null;
-            if (cache_data) {
-                return cache_data;
-            }
+        // Read the cache straight from disk (no self-HTTP roundtrip).
+        const cached = use_cache ? readApiCacheFile(file_name) : null;
+        // Fresh cache hit: serve immediately. Bare files (e.g. externally written
+        // arrays) carry no expiry and are therefore always treated as fresh.
+        if (cached && !cached.expired) {
+            return cached.data;
         }
-        // get the data from the API
+        // Cache missing or stale: try to (re)fetch from the CMS.
         const endpoint = `${getCMSEndpoint()}${api}`;
         const payload = yield fetchJSON(endpoint);
         if (payload !== null) {
             // save the data to the cache
             writeApiCache(file_name, payload, lifetime);
             return payload;
+        }
+        // Refetch failed (upstream error / offline / no CMS route for this key).
+        // Serve stale cache if we have any — outdated data beats a hard 404.
+        if (cached) {
+            return cached.data;
         }
         return null;
     });

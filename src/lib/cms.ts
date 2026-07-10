@@ -1,5 +1,5 @@
 import {
-  readApiCache,
+  readApiCacheFile,
   writeApiCache,
   writeBuffer,
   writeContentCache,
@@ -345,14 +345,16 @@ export async function getAPI(
 ): Promise<any> {
   const file_name = api.replace(/\//g, '_')
 
-  if (use_cache) {
-    const cache_data = (await readApiCache(file_name)) || null
-    if (cache_data) {
-      return cache_data
-    }
+  // Read the cache straight from disk (no self-HTTP roundtrip).
+  const cached = use_cache ? readApiCacheFile(file_name) : null
+
+  // Fresh cache hit: serve immediately. Bare files (e.g. externally written
+  // arrays) carry no expiry and are therefore always treated as fresh.
+  if (cached && !cached.expired) {
+    return cached.data
   }
 
-  // get the data from the API
+  // Cache missing or stale: try to (re)fetch from the CMS.
   const endpoint = `${getCMSEndpoint()}${api}`
   const payload = await fetchJSON(endpoint)
 
@@ -360,6 +362,12 @@ export async function getAPI(
     // save the data to the cache
     writeApiCache(file_name, payload, lifetime)
     return payload
+  }
+
+  // Refetch failed (upstream error / offline / no CMS route for this key).
+  // Serve stale cache if we have any — outdated data beats a hard 404.
+  if (cached) {
+    return cached.data
   }
 
   return null

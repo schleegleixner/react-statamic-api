@@ -93,7 +93,7 @@ export function getCachedData(api) {
 export function getCompleteTileset() {
     return __awaiter(this, arguments, void 0, function* (site_id = 'default') {
         const collection = (yield getPopulatedCollection('tiles', site_id));
-        const sources = (yield getPopulatedCollection('sources'));
+        const sources = (yield getPopulatedCollection('sources', site_id));
         if (!collection ||
             !sources ||
             collection.length === 0 ||

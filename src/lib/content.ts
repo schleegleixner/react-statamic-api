@@ -139,6 +139,7 @@ export async function getCompleteTileset(
   )) as TileDataType[]
   const sources = (await getPopulatedCollection(
     'sources',
+    site_id,
   )) as TileDatasourceType[]
 
   if (

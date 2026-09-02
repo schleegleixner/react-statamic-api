@@ -1,6 +1,6 @@
 {
   "name": "@schleegleixner/react-statamic-api",
-  "version": "1.11.3",
+  "version": "1.12.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
@@ -70,7 +70,7 @@
   },
   "peerDependencies": {
     "echarts": "^6.0.0",
-    "sharp": "^0.34.3",
+    "sharp": "^0.35.0",
     "next": "^16.0.0",
     "react": "^19.1.8",
     "react-dom": "^19.1.6",
@@ -91,12 +91,14 @@
     "os": false
   },
   "overrides": {
-    "minimatch": ">=10.2.1"
+    "minimatch": ">=10.2.1",
+    "browserslist": ">=4.28.7",
+    "sharp": "^0.35.0"
   },
   "allowScripts": {
     "esbuild@0.25.12": true,
     "esbuild@0.28.1": true,
     "fsevents@2.3.3": true,
-    "sharp@0.34.5": true
+    "sharp@0.35.4": true
   }
 }

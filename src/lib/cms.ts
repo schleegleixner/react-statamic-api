@@ -34,9 +34,7 @@ function buildFullUrl(
   return `/${site_id !== 'default' ? site_id : ''}/${url}`.replace(/\/+/g, '/')
 }
 
-export async function fetchFromStatamic(
-  sites: string[],
-): Promise<ResultType> {
+export async function fetchFromStatamic(sites: string[]): Promise<ResultType> {
   const results: StepResultType[] = []
 
   const rebuild_results = await rebuildCache(sites)
@@ -97,8 +95,7 @@ async function fetchGlobalHandles(
   const endpoint = `${base_url}globals?site_id=${site_id}&secret=${process.env.API_SECRET}`
 
   const payload = (await fetchJSON(endpoint, { silentNotFound: true })) as
-    | { handle: string }[]
-    | null
+    { handle: string }[] | null
 
   if (!Array.isArray(payload)) {
     return []
@@ -125,7 +122,12 @@ async function createPopulatedCollection(
   collection_id: string,
   site_id: string = 'default',
 ): Promise<any> {
-  const json_data = getFileContent(temporary_folder, 'collection', collection_id, false)
+  const json_data = getFileContent(
+    temporary_folder,
+    'collection',
+    collection_id,
+    false,
+  )
   const collection = json_data?.payload
   // const collection = await getCollection(collection_id, temporary_folder)
 
@@ -148,8 +150,12 @@ async function createPopulatedCollection(
     )
 
     const resolvePath = (entry: any, visited: Set<string>): string => {
-      if (!entry?.url) return ''
-      if (visited.has(entry.id)) return entry.url
+      if (!entry?.url) {
+        return ''
+      }
+      if (visited.has(entry.id)) {
+        return entry.url
+      }
       visited.add(entry.id)
 
       const segment = entry.url.replace(/^\/+|\/+$/g, '')
@@ -165,7 +171,9 @@ async function createPopulatedCollection(
         resolved_path_by_id.get(parent_entry.id) ??
         resolvePath(parent_entry, visited)
 
-      if (!segment) return parent_path
+      if (!segment) {
+        return parent_path
+      }
       return parent_path === '/' ? `/${segment}` : `${parent_path}/${segment}`
     }
 
@@ -220,7 +228,12 @@ async function createPopulatedCollection(
 
       // pages
       if (collection_id === 'pages') {
-        entry.content = await getFileContent(temporary_folder, 'content', 'page', entry.slug)?.payload
+        entry.content = await getFileContent(
+          temporary_folder,
+          'content',
+          'page',
+          entry.slug,
+        )?.payload
       }
 
       // sources
@@ -278,14 +291,17 @@ async function createPopulatedNavigation(
   title: string | null
   items: NavItemPopulated[]
 } | null> {
-  const json_data = getFileContent(temporary_folder, 'navigation', handle, false)
+  const json_data = getFileContent(
+    temporary_folder,
+    'navigation',
+    handle,
+    false,
+  )
   const navigation = json_data?.payload
 
   if (!navigation) {
     // eslint-disable-next-line no-console
-    console.warn(
-      `⚠️ Navigation not found: ${handle} (${temporary_folder})`,
-    )
+    console.warn(`⚠️ Navigation not found: ${handle} (${temporary_folder})`)
     return null
   }
 
@@ -336,7 +352,6 @@ async function createPopulatedNavigation(
 
   return populated
 }
-
 
 export async function getAPI(
   api: string,
@@ -455,24 +470,24 @@ async function fetchForSite(site_id: string) {
   const tasks_files: Promise<any>[] = []
   let navigation_handles: string[] = []
 
-    ; (data.tiles ?? []).forEach((tile: { tile_id: string }) =>
-      tasks_content.push(
-        limit(() =>
-          fetchContent(site_id, 'tile', tile.tile_id).then(r =>
-            results.push({ name: 'tile::' + tile.tile_id, success: !!r }),
-          ),
+  ;(data.tiles ?? []).forEach((tile: { tile_id: string }) =>
+    tasks_content.push(
+      limit(() =>
+        fetchContent(site_id, 'tile', tile.tile_id).then(r =>
+          results.push({ name: 'tile::' + tile.tile_id, success: !!r }),
         ),
       ),
-    )
-    ; (data.pages ?? []).forEach((page: { slug: string }) =>
-      tasks_content.push(
-        limit(() =>
-          fetchContent(site_id, 'page', page.slug).then(r =>
-            results.push({ name: 'page::' + page.slug, success: !!r }),
-          ),
+    ),
+  )
+  ;(data.pages ?? []).forEach((page: { slug: string }) =>
+    tasks_content.push(
+      limit(() =>
+        fetchContent(site_id, 'page', page.slug).then(r =>
+          results.push({ name: 'page::' + page.slug, success: !!r }),
         ),
       ),
-    )
+    ),
+  )
 
   taxonomies.forEach(t =>
     tasks_content.push(
@@ -521,31 +536,31 @@ async function fetchForSite(site_id: string) {
     }),
   )
 
-    // only download images and sources for the default site
-    ; (data.images ?? []).forEach((image: { url: string; file_name: string }) =>
-      tasks_files.push(
-        limit(() =>
-          downloadFile(site_id, image.url, 'images').then(r =>
-            results.push({
-              name: 'image::' + image.file_name,
-              success: r !== null,
-            }),
-          ),
+  // only download images and sources for the default site
+  ;(data.images ?? []).forEach((image: { url: string; file_name: string }) =>
+    tasks_files.push(
+      limit(() =>
+        downloadFile(site_id, image.url, 'images').then(r =>
+          results.push({
+            name: 'image::' + image.file_name,
+            success: r !== null,
+          }),
         ),
       ),
-    )
-    ; (data.sources ?? []).forEach((source: { url: string; file_name: string }) =>
-      tasks_files.push(
-        limit(() =>
-          downloadFile(site_id, source.url, 'source').then(r =>
-            results.push({
-              name: 'source::' + source.file_name,
-              success: r !== null,
-            }),
-          ),
+    ),
+  )
+  ;(data.sources ?? []).forEach((source: { url: string; file_name: string }) =>
+    tasks_files.push(
+      limit(() =>
+        downloadFile(site_id, source.url, 'source').then(r =>
+          results.push({
+            name: 'source::' + source.file_name,
+            success: r !== null,
+          }),
         ),
       ),
-    )
+    ),
+  )
 
   // eslint-disable-next-line no-console
   console.log(
@@ -573,7 +588,9 @@ async function fetchForSite(site_id: string) {
   }
 
   // eslint-disable-next-line no-console
-  console.log(`ℹ️ Creating populated navigation: ${navigation_handles.length} (${site_id})`)
+  console.log(
+    `ℹ️ Creating populated navigation: ${navigation_handles.length} (${site_id})`,
+  )
 
   for (const handle of navigation_handles) {
     // eslint-disable-next-line no-console

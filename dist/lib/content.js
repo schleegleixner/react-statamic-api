@@ -122,7 +122,7 @@ export function getImageMeta(file_name_1, site_id_1) {
         let images = use_cache
             ? readLocalStorage(cache_key, site_id)
             : null;
-        let from_cache = !!images;
+        const from_cache = !!images;
         // if the image is not in the cache, get it from the collection
         if (!images) {
             images = (yield getCollection('images', site_id));

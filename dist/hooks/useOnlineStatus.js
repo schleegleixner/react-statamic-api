@@ -24,8 +24,9 @@ export default function useOnlineStatus() {
         let cancelled = false;
         const probe = () => __awaiter(this, void 0, void 0, function* () {
             if (!navigator.onLine) {
-                if (!cancelled)
+                if (!cancelled) {
                     setIsOnline(false);
+                }
                 return;
             }
             const controller = new AbortController();
@@ -36,12 +37,14 @@ export default function useOnlineStatus() {
                     cache: 'no-store',
                     signal: controller.signal,
                 });
-                if (!cancelled)
+                if (!cancelled) {
                     setIsOnline(true);
+                }
             }
             catch (_a) {
-                if (!cancelled)
+                if (!cancelled) {
                     setIsOnline(false);
+                }
             }
             finally {
                 clearTimeout(timeout);

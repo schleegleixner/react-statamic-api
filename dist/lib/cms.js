@@ -100,10 +100,12 @@ function createPopulatedCollection(collection_id_1) {
             const pages_by_id = new Map(collection.map((p) => [p.id, p]));
             const resolvePath = (entry, visited) => {
                 var _a, _b;
-                if (!(entry === null || entry === void 0 ? void 0 : entry.url))
+                if (!(entry === null || entry === void 0 ? void 0 : entry.url)) {
                     return '';
-                if (visited.has(entry.id))
+                }
+                if (visited.has(entry.id)) {
                     return entry.url;
+                }
                 visited.add(entry.id);
                 const segment = entry.url.replace(/^\/+|\/+$/g, '');
                 const parent_entry = ((_a = entry.parent) === null || _a === void 0 ? void 0 : _a.id)
@@ -113,8 +115,9 @@ function createPopulatedCollection(collection_id_1) {
                     return segment ? `/${segment}` : '/';
                 }
                 const parent_path = (_b = resolved_path_by_id.get(parent_entry.id)) !== null && _b !== void 0 ? _b : resolvePath(parent_entry, visited);
-                if (!segment)
+                if (!segment) {
                     return parent_path;
+                }
                 return parent_path === '/' ? `/${segment}` : `${parent_path}/${segment}`;
             };
             for (const entry of collection) {

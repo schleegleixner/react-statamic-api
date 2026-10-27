@@ -1,10 +1,11 @@
 import { getCachePath } from '../utils/filesystem'
 import fs from 'fs'
 import path from 'path'
+import type Sharp from 'sharp'
 
 export default async function getProcessedImageData(
   site_id: string = 'default',
-  sharp: typeof import('sharp') | null,
+  sharp: typeof Sharp | null,
   file_name: string,
   width: number,
   height: number | null = null,

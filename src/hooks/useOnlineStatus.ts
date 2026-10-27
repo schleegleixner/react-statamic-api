@@ -19,7 +19,9 @@ export default function useOnlineStatus(): boolean {
 
     const probe = async () => {
       if (!navigator.onLine) {
-        if (!cancelled) setIsOnline(false)
+        if (!cancelled) {
+          setIsOnline(false)
+        }
         return
       }
 
@@ -32,9 +34,13 @@ export default function useOnlineStatus(): boolean {
           cache: 'no-store',
           signal: controller.signal,
         })
-        if (!cancelled) setIsOnline(true)
+        if (!cancelled) {
+          setIsOnline(true)
+        }
       } catch {
-        if (!cancelled) setIsOnline(false)
+        if (!cancelled) {
+          setIsOnline(false)
+        }
       } finally {
         clearTimeout(timeout)
       }

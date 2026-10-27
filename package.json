@@ -1,6 +1,6 @@
 {
   "name": "@schleegleixner/react-statamic-api",
-  "version": "1.12.0",
+  "version": "1.12.1",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
@@ -93,12 +93,13 @@
   "overrides": {
     "minimatch": ">=10.2.1",
     "browserslist": ">=4.28.7",
-    "sharp": "^0.35.0"
+    "sharp": "$sharp",
+    "zod": "^4.6.6"
   },
   "allowScripts": {
     "esbuild@0.25.12": true,
-    "esbuild@0.28.1": true,
+    "esbuild@0.28.2": true,
     "fsevents@2.3.3": true,
-    "sharp@0.35.4": true
+    "sharp@0.35.5": true
   }
 }

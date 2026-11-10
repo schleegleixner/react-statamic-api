@@ -38,7 +38,7 @@ function supportsSymlinks() {
         return false;
     }
 }
-function removePath(target) {
+export function removePath(target) {
     try {
         const stats = fs.lstatSync(target);
         if (stats.isSymbolicLink()) {

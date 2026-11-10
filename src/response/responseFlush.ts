@@ -1,5 +1,6 @@
 import { checkSecret } from '../utils/api'
 import { fetchFromStatamic } from '../lib/cms'
+import { parseRelease } from '../lib/incremental'
 
 function withCors(
   body: BodyInit | null,
@@ -21,21 +22,24 @@ function withCors(
 export default async function responseFlush(req: Request): Promise<Response> {
   const { searchParams } = new URL(req.url)
   const secret = searchParams.get('secret') ?? ''
-  let sites: string[] = []
+  let body: any = null
 
-  // try to get sites from query params
+  // sites and release info come from the JSON body (optional)
   try {
-    const body = await req.json()
-    sites = body.sites ?? []
+    body = await req.json()
   } catch {
-    sites = process.env.SITE_IDS?.split(',') ?? ['default']
+    body = null
   }
+
+  const sites: string[] = Array.isArray(body?.sites)
+    ? body.sites
+    : (process.env.SITE_IDS?.split(',') ?? ['default'])
 
   if (!checkSecret(secret)) {
     return withCors(JSON.stringify({ message: 'Unauthorized' }), 401)
   }
 
-  const result = await fetchFromStatamic(sites)
+  const result = await fetchFromStatamic(sites, parseRelease(body))
   return withCors(JSON.stringify(result), 200)
 }
 

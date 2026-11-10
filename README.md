@@ -148,6 +148,8 @@ npx react-statamic-flush
 npx react-statamic-flush default en
 ```
 
+Das CMS kann im Flush-Body zusätzlich `base`, `release` und `changes` (`tiles`, `sources`, `images`) mitschicken. Jeder Site-Cache merkt sich sein Release in `release.json`. Steht dort genau `base`, wird der Cache kopiert und nur das Nötige neu geladen: Listen, Seiten, Taxonomien, Globals und Navigation immer, Kacheln und Dateien nur wenn geändert oder fehlend; was aus den Listen verschwunden ist, wird entfernt. In allen anderen Fällen (kein `changes`, anderes oder unbekanntes Release, CLI) wird alles neu übertragen. Danach wird `release` gespeichert.
+
 ## Entwicklung
 
 Lokal im Dashboard verdrahten:

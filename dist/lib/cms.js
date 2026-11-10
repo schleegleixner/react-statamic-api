@@ -10,13 +10,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import { readApiCacheFile, writeApiCache, writeBuffer, writeContentCache, } from '../lib/cache';
 import { fetchFile, fetchJSON, getCMSEndpoint } from '../utils/api';
 import path from 'path';
-import { ensureCacheFolder, moveTemporaryFolder, getCachePath, } from '../utils/filesystem';
+import { moveTemporaryFolder, getCachePath, getCachedFilePath, removePath, } from '../utils/filesystem';
 import getDataFile from '../api/getDataFile';
 import { getTimeline } from '../utils/sources';
 import pLimit from 'p-limit';
 import { sanitizeString } from '../utils/sanitize';
 import { getFileContent } from '../response/responseContent';
-const temporary_folder = 'temp';
+import { fileNameFromPath, needsTransfer, prepareTemporaryFolder, pruneOrphans, writeRelease, } from './incremental';
 function buildFullUrl(url, site_id = 'default') {
     if (!url) {
         return null;
@@ -26,10 +26,10 @@ function buildFullUrl(url, site_id = 'default') {
     }
     return `/${site_id !== 'default' ? site_id : ''}/${url}`.replace(/\/+/g, '/');
 }
-export function fetchFromStatamic(sites) {
-    return __awaiter(this, void 0, void 0, function* () {
+export function fetchFromStatamic(sites_1) {
+    return __awaiter(this, arguments, void 0, function* (sites, release = {}) {
         const results = [];
-        const rebuild_results = yield rebuildCache(sites);
+        const rebuild_results = yield rebuildCache(sites, release);
         const rebuild_success = rebuild_results.every(result => result.success === true);
         results.push({
             name: 'step::rebuild',
@@ -44,8 +44,8 @@ export function fetchFromStatamic(sites) {
         return { message, endpoint, results, success: overall_success };
     });
 }
-function fetchFromRemote() {
-    return __awaiter(this, arguments, void 0, function* (site_id = 'default', content_type = 'content', collection_id, id, options) {
+function fetchFromRemote(temporary_folder_1) {
+    return __awaiter(this, arguments, void 0, function* (temporary_folder, site_id = 'default', content_type = 'content', collection_id, id, options) {
         const base_url = getCMSEndpoint();
         const parts = [content_type, collection_id, id].filter(Boolean);
         const endpoint = `${base_url}${parts.join('/')}?site_id=${site_id}&secret=${process.env.API_SECRET}`;
@@ -74,16 +74,16 @@ function fetchGlobalHandles() {
             .filter((handle) => typeof handle === 'string');
     });
 }
-function fetchContent() {
-    return __awaiter(this, arguments, void 0, function* (site_id = 'default', collection_id, id) {
+function fetchContent(temporary_folder_1) {
+    return __awaiter(this, arguments, void 0, function* (temporary_folder, site_id = 'default', collection_id, id) {
         const singular_id = collection_id.endsWith('s')
             ? collection_id.slice(0, -1)
             : collection_id;
-        return yield fetchFromRemote(site_id, 'content', singular_id, id);
+        return yield fetchFromRemote(temporary_folder, site_id, 'content', singular_id, id);
     });
 }
-function createPopulatedCollection(collection_id_1) {
-    return __awaiter(this, arguments, void 0, function* (collection_id, site_id = 'default') {
+function createPopulatedCollection(temporary_folder_1, collection_id_1) {
+    return __awaiter(this, arguments, void 0, function* (temporary_folder, collection_id, site_id = 'default') {
         const json_data = getFileContent(temporary_folder, 'collection', collection_id, false);
         const collection = json_data === null || json_data === void 0 ? void 0 : json_data.payload;
         // const collection = await getCollection(collection_id, temporary_folder)
@@ -174,8 +174,8 @@ function createPopulatedCollection(collection_id_1) {
         return collection;
     });
 }
-function createPopulatedNavigation(handle_1) {
-    return __awaiter(this, arguments, void 0, function* (handle, site_id = 'default') {
+function createPopulatedNavigation(temporary_folder_1, handle_1) {
+    return __awaiter(this, arguments, void 0, function* (temporary_folder, handle, site_id = 'default') {
         var _a, _b, _c;
         const json_data = getFileContent(temporary_folder, 'navigation', handle, false);
         const navigation = json_data === null || json_data === void 0 ? void 0 : json_data.payload;
@@ -243,25 +243,26 @@ export function getAPI(api_1) {
         return null;
     });
 }
-function downloadFile(site_id, file_path, folder) {
+function downloadFile(temporary_folder, file_path, folder) {
     return __awaiter(this, void 0, void 0, function* () {
         // if endpoint has no http(s):// prefix, prepend the CMS endpoint
         const endpoint = file_path.startsWith('http')
             ? file_path
             : getCMSEndpoint(path.join(folder, file_path));
-        const file_name = file_path.startsWith('http')
-            ? path.basename(file_path)
-            : file_path;
+        const target = getCachePath(temporary_folder, folder, fileNameFromPath(file_path));
+        // drop an outdated copy first: a failed download then leaves the file
+        // missing, so the next incremental flush retries it
+        removePath(target);
         const content = yield fetchFile(endpoint);
         if (!content) {
             return false;
         }
-        yield writeBuffer(getCachePath(temporary_folder, folder, file_name), content);
+        yield writeBuffer(target, content);
     });
 }
 // rebuild the cache for all sites
-export function rebuildCache(sites) {
-    return __awaiter(this, void 0, void 0, function* () {
+export function rebuildCache(sites_1) {
+    return __awaiter(this, arguments, void 0, function* (sites, release = {}) {
         // if no sites are defined, use a default site
         if (!sites || sites.length === 0) {
             return [];
@@ -269,16 +270,28 @@ export function rebuildCache(sites) {
         // eslint-disable-next-line no-console
         console.log('🔄 Rebuilding cache for sites:', sites);
         const results = yield Promise.all(sites.map((site) => __awaiter(this, void 0, void 0, function* () {
+            var _a, _b, _c;
             const name = 'site::' + site;
+            // one temporary folder per site, so parallel rebuilds can't mix
+            const temporary_folder = `temp-${site}`;
             try {
-                ensureCacheFolder(temporary_folder);
-                const fetch_result = yield fetchForSite(site);
+                const mode = prepareTemporaryFolder(temporary_folder, site, release);
+                // eslint-disable-next-line no-console
+                console.log(`ℹ️ Rebuild mode for site ${site}: ${mode} (base: ${(_a = release.base) !== null && _a !== void 0 ? _a : '-'}, release: ${(_b = release.release) !== null && _b !== void 0 ? _b : '-'})`);
+                const fetch_result = yield fetchForSite(temporary_folder, site, mode === 'incremental' ? release.changes : undefined);
                 // check if any step failed
                 if (fetch_result.every(result => result.success === true)) {
+                    writeRelease(temporary_folder, release.release);
                     yield moveTemporaryFolder(temporary_folder, site);
-                    return { name, success: true, result: fetch_result };
+                    return {
+                        name,
+                        success: true,
+                        mode,
+                        release: (_c = release.release) !== null && _c !== void 0 ? _c : null,
+                        result: fetch_result,
+                    };
                 }
-                return { name, success: false, result: fetch_result };
+                return { name, success: false, mode, result: fetch_result };
             }
             catch (e) {
                 // eslint-disable-next-line no-console
@@ -289,10 +302,13 @@ export function rebuildCache(sites) {
         return results;
     });
 }
-// fetch all data for a specific site
-function fetchForSite(site_id) {
+// fetch all data for a specific site. With `changes` the temporary folder
+// already holds a copy of the current cache: lists, pages, taxonomies,
+// globals and navigation are refetched anyway, tiles and files only when
+// changed or missing, and items that vanished from the lists are removed.
+function fetchForSite(temporary_folder, site_id, changes) {
     return __awaiter(this, void 0, void 0, function* () {
-        var _a, _b, _c, _d;
+        var _a, _b;
         const collections = process.env.SET_COLLECTIONS
             ? process.env.SET_COLLECTIONS.split(',')
             : ['pages', 'sources', 'images', 'tiles'];
@@ -307,33 +323,47 @@ function fetchForSite(site_id) {
         const data = {};
         const results = [];
         const limit = pLimit(10); // limit concurrent requests
-        const collection_results = yield Promise.all(collections.map(c => fetchFromRemote(site_id, 'collection', c)));
-        collections.forEach((c, i) => (data[c] = collection_results[i]));
+        const collection_results = yield Promise.all(collections.map(c => fetchFromRemote(temporary_folder, site_id, 'collection', c)));
+        collections.forEach((c, i) => {
+            data[c] = collection_results[i];
+            // a stale list copied from the cache must not pass as fresh
+            if (changes) {
+                results.push({ name: 'collection::' + c, success: !!data[c] });
+            }
+        });
+        if (changes) {
+            pruneOrphans(temporary_folder, data);
+        }
         const tasks_content = [];
         const tasks_files = [];
         let navigation_handles = [];
-        ((_a = data.tiles) !== null && _a !== void 0 ? _a : []).forEach((tile) => tasks_content.push(limit(() => fetchContent(site_id, 'tile', tile.tile_id).then(r => results.push({ name: 'tile::' + tile.tile_id, success: !!r })))));
-        ((_b = data.pages) !== null && _b !== void 0 ? _b : []).forEach((page) => tasks_content.push(limit(() => fetchContent(site_id, 'page', page.slug).then(r => results.push({ name: 'page::' + page.slug, success: !!r })))));
-        taxonomies.forEach(t => tasks_content.push(limit(() => fetchFromRemote(site_id, 'taxonomy', t).then(r => results.push({ name: 'taxonomy::' + t, success: !!r })))));
-        global.forEach(g => tasks_content.push(limit(() => fetchFromRemote(site_id, 'global', g).then(r => results.push({ name: 'global::' + g, success: !!r })))));
+        ((_a = data.tiles) !== null && _a !== void 0 ? _a : [])
+            .filter((tile) => needsTransfer(changes, 'tiles', tile.tile_id, getCachedFilePath(temporary_folder, 'content', 'tile', tile.tile_id)))
+            .forEach((tile) => tasks_content.push(limit(() => fetchContent(temporary_folder, site_id, 'tile', tile.tile_id).then(r => results.push({ name: 'tile::' + tile.tile_id, success: !!r })))));
+        ((_b = data.pages) !== null && _b !== void 0 ? _b : []).forEach((page) => tasks_content.push(limit(() => fetchContent(temporary_folder, site_id, 'page', page.slug).then(r => results.push({ name: 'page::' + page.slug, success: !!r })))));
+        taxonomies.forEach(t => tasks_content.push(limit(() => fetchFromRemote(temporary_folder, site_id, 'taxonomy', t).then(r => results.push({ name: 'taxonomy::' + t, success: !!r })))));
+        global.forEach(g => tasks_content.push(limit(() => fetchFromRemote(temporary_folder, site_id, 'global', g).then(r => results.push({ name: 'global::' + g, success: !!r })))));
         tasks_content.push(limit(() => __awaiter(this, void 0, void 0, function* () {
-            const list_payload = (yield fetchFromRemote(site_id, 'navigation', undefined, undefined, { silentNotFound: true }));
+            const list_payload = (yield fetchFromRemote(temporary_folder, site_id, 'navigation', undefined, undefined, { silentNotFound: true }));
             // navigation list is optional (silentNotFound); a missing list must not
             // fail the rebuild and block moveTemporaryFolder from running
             results.push({ name: 'navigation::list', success: true });
             navigation_handles = (list_payload !== null && list_payload !== void 0 ? list_payload : []).map(({ handle }) => handle);
-            yield Promise.all(navigation_handles.map(handle => limit(() => fetchFromRemote(site_id, 'navigation', handle, undefined, {
-                silentNotFound: true,
-            }).then(r => results.push({ name: 'navigation::' + handle, success: !!r })))));
+            yield Promise.all(navigation_handles.map(handle => limit(() => fetchFromRemote(temporary_folder, site_id, 'navigation', handle, undefined, { silentNotFound: true }).then(r => results.push({ name: 'navigation::' + handle, success: !!r })))));
         })));
-        ((_c = data.images) !== null && _c !== void 0 ? _c : []).forEach((image) => tasks_files.push(limit(() => downloadFile(site_id, image.url, 'images').then(r => results.push({
-            name: 'image::' + image.file_name,
-            success: r !== null,
-        })))));
-        ((_d = data.sources) !== null && _d !== void 0 ? _d : []).forEach((source) => tasks_files.push(limit(() => downloadFile(site_id, source.url, 'source').then(r => results.push({
-            name: 'source::' + source.file_name,
-            success: r !== null,
-        })))));
+        const files = [
+            { list: 'images', folder: 'images', key: 'images' },
+            { list: 'sources', folder: 'source', key: 'sources' },
+        ];
+        files.forEach(({ list, folder, key }) => {
+            var _a;
+            return ((_a = data[list]) !== null && _a !== void 0 ? _a : [])
+                .filter((file) => needsTransfer(changes, key, file.file_name, getCachePath(temporary_folder, folder, fileNameFromPath(file.url))))
+                .forEach((file) => tasks_files.push(limit(() => downloadFile(temporary_folder, file.url, folder).then(r => results.push({
+                name: `${key.slice(0, -1)}::${file.file_name}`,
+                success: r !== null,
+            })))));
+        });
         // eslint-disable-next-line no-console
         console.log(`ℹ️ Fetching content for site: ${site_id}, tasks: ${tasks_content.length}`);
         yield Promise.all(tasks_content);
@@ -345,7 +375,7 @@ function fetchForSite(site_id) {
         for (const c of collections) {
             // eslint-disable-next-line no-console
             console.log(`ℹ️ Creating populated collection: ${c} (${site_id})`);
-            const result = yield createPopulatedCollection(c, site_id);
+            const result = yield createPopulatedCollection(temporary_folder, c, site_id);
             results.push({
                 name: 'populated_collection::' + c,
                 success: result !== null,
@@ -356,7 +386,7 @@ function fetchForSite(site_id) {
         for (const handle of navigation_handles) {
             // eslint-disable-next-line no-console
             console.log(`ℹ️ Creating populated navigation: ${handle} (${site_id})`);
-            const result = yield createPopulatedNavigation(handle, site_id);
+            const result = yield createPopulatedNavigation(temporary_folder, handle, site_id);
             results.push({
                 name: 'populated_navigation::' + handle,
                 success: result !== null,

@@ -101,8 +101,8 @@ var require_package = __commonJS({
 // node_modules/dotenv/lib/main.js
 var require_main = __commonJS({
   "node_modules/dotenv/lib/main.js"(exports2, module2) {
-    var fs5 = require("fs");
-    var path4 = require("path");
+    var fs6 = require("fs");
+    var path5 = require("path");
     var os = require("os");
     var crypto2 = require("crypto");
     var packageJson = require_package();
@@ -210,7 +210,7 @@ var require_main = __commonJS({
       if (options && options.path && options.path.length > 0) {
         if (Array.isArray(options.path)) {
           for (const filepath of options.path) {
-            if (fs5.existsSync(filepath)) {
+            if (fs6.existsSync(filepath)) {
               possibleVaultPath = filepath.endsWith(".vault") ? filepath : `${filepath}.vault`;
             }
           }
@@ -218,15 +218,15 @@ var require_main = __commonJS({
           possibleVaultPath = options.path.endsWith(".vault") ? options.path : `${options.path}.vault`;
         }
       } else {
-        possibleVaultPath = path4.resolve(process.cwd(), ".env.vault");
+        possibleVaultPath = path5.resolve(process.cwd(), ".env.vault");
       }
-      if (fs5.existsSync(possibleVaultPath)) {
+      if (fs6.existsSync(possibleVaultPath)) {
         return possibleVaultPath;
       }
       return null;
     }
     function _resolveHome(envPath) {
-      return envPath[0] === "~" ? path4.join(os.homedir(), envPath.slice(1)) : envPath;
+      return envPath[0] === "~" ? path5.join(os.homedir(), envPath.slice(1)) : envPath;
     }
     function _configVault(options) {
       const debug = Boolean(options && options.debug);
@@ -243,7 +243,7 @@ var require_main = __commonJS({
       return { parsed };
     }
     function configDotenv(options) {
-      const dotenvPath = path4.resolve(process.cwd(), ".env");
+      const dotenvPath = path5.resolve(process.cwd(), ".env");
       let encoding = "utf8";
       const debug = Boolean(options && options.debug);
       const quiet = options && "quiet" in options ? options.quiet : true;
@@ -267,13 +267,13 @@ var require_main = __commonJS({
       }
       let lastError;
       const parsedAll = {};
-      for (const path5 of optionPaths) {
+      for (const path6 of optionPaths) {
         try {
-          const parsed = DotenvModule.parse(fs5.readFileSync(path5, { encoding }));
+          const parsed = DotenvModule.parse(fs6.readFileSync(path6, { encoding }));
           DotenvModule.populate(parsedAll, parsed, options);
         } catch (e) {
           if (debug) {
-            _debug(`Failed to load ${path5} ${e.message}`);
+            _debug(`Failed to load ${path6} ${e.message}`);
           }
           lastError = e;
         }
@@ -288,7 +288,7 @@ var require_main = __commonJS({
         const shortPaths = [];
         for (const filePath of optionPaths) {
           try {
-            const relative = path4.relative(process.cwd(), filePath);
+            const relative = path5.relative(process.cwd(), filePath);
             shortPaths.push(relative);
           } catch (e) {
             if (debug) {
@@ -9281,11 +9281,11 @@ var require_mime_types = __commonJS({
       }
       return exts[0];
     }
-    function lookup(path4) {
-      if (!path4 || typeof path4 !== "string") {
+    function lookup(path5) {
+      if (!path5 || typeof path5 !== "string") {
         return false;
       }
-      var extension2 = extname("x." + path4).toLowerCase().substr(1);
+      var extension2 = extname("x." + path5).toLowerCase().substr(1);
       if (!extension2) {
         return false;
       }
@@ -10390,11 +10390,11 @@ var require_form_data = __commonJS({
     "use strict";
     var CombinedStream = require_combined_stream();
     var util4 = require("util");
-    var path4 = require("path");
+    var path5 = require("path");
     var http3 = require("http");
     var https4 = require("https");
     var parseUrl2 = require("url").parse;
-    var fs5 = require("fs");
+    var fs6 = require("fs");
     var Stream = require("stream").Stream;
     var crypto2 = require("crypto");
     var mime = require_mime_types();
@@ -10464,7 +10464,7 @@ var require_form_data = __commonJS({
         if (value.end != void 0 && value.end != Infinity && value.start != void 0) {
           callback(null, value.end + 1 - (value.start ? value.start : 0));
         } else {
-          fs5.stat(value.path, function(err, stat) {
+          fs6.stat(value.path, function(err, stat) {
             if (err) {
               callback(err);
               return;
@@ -10521,11 +10521,11 @@ var require_form_data = __commonJS({
     FormData3.prototype._getContentDisposition = function(value, options) {
       var filename;
       if (typeof options.filepath === "string") {
-        filename = path4.normalize(options.filepath).replace(/\\/g, "/");
+        filename = path5.normalize(options.filepath).replace(/\\/g, "/");
       } else if (options.filename || value && (value.name || value.path)) {
-        filename = path4.basename(options.filename || value && (value.name || value.path));
+        filename = path5.basename(options.filename || value && (value.name || value.path));
       } else if (value && value.readable && hasOwn(value, "httpVersion")) {
-        filename = path4.basename(value.client._httpMessage.path || "");
+        filename = path5.basename(value.client._httpMessage.path || "");
       }
       if (filename) {
         return 'filename="' + escapeHeaderParam(filename) + '"';
@@ -13743,13 +13743,6 @@ var default_site_id = "default";
 function getCacheRootPath(site_id) {
   return [process.cwd(), cache_folder, site_id].filter(Boolean).join("/");
 }
-function ensureCacheFolder(site_id = "default") {
-  const cache_path = getCacheRootPath(site_id);
-  if (!import_fs.default.existsSync(cache_path)) {
-    import_fs.default.mkdirSync(cache_path, { recursive: true });
-  }
-  return cache_path;
-}
 function getVersionsPath(site_id) {
   return [process.cwd(), cache_folder, "versions", site_id].join("/");
 }
@@ -13792,8 +13785,8 @@ function cleanupOldVersions(site_id, keep = 10) {
     import_fs.default.rmSync(`${versions_path}/${entry}`, { recursive: true, force: true });
   }
 }
-async function moveTemporaryFolder(temporary_folder2, site_id) {
-  const temp_path = getCacheRootPath(temporary_folder2);
+async function moveTemporaryFolder(temporary_folder, site_id) {
+  const temp_path = getCacheRootPath(temporary_folder);
   const site_path = getCacheRootPath(site_id);
   try {
     if (supportsSymlinks()) {
@@ -13822,7 +13815,7 @@ async function moveTemporaryFolder(temporary_folder2, site_id) {
     return true;
   } catch (error) {
     console.error(
-      `\u2620\uFE0F  Failed to move folder '${temporary_folder2}' \u2192 '${site_id}':`,
+      `\u2620\uFE0F  Failed to move folder '${temporary_folder}' \u2192 '${site_id}':`,
       error
     );
     return false;
@@ -13832,13 +13825,13 @@ function getCachePath(site_id = null, content_type = "content", folder = false, 
   if (site_id === false) {
     site_id = null;
   }
-  const path4 = [
+  const path5 = [
     getCacheRootPath(site_id ?? default_site_id),
     content_type,
     folder,
     filename
   ].filter(Boolean).join("/");
-  return path4;
+  return path5;
 }
 function getCachedFilePath(site_id = "default", content_type = "content", folder = false, id) {
   return getCachePath(
@@ -15073,9 +15066,9 @@ function isVisitable(thing) {
 function removeBrackets(key) {
   return utils_default.endsWith(key, "[]") ? key.slice(0, -2) : key;
 }
-function renderKey(path4, key, dots) {
-  if (!path4) return key;
-  return path4.concat(key).map(function each(token, i) {
+function renderKey(path5, key, dots) {
+  if (!path5) return key;
+  return path5.concat(key).map(function each(token, i) {
     token = removeBrackets(token);
     return !dots && i ? "[" + token + "]" : token;
   }).join(dots ? "." : "");
@@ -15156,13 +15149,13 @@ function toFormData(obj, formData, options) {
       return currentValue;
     });
   }
-  function defaultVisitor(value, key, path4) {
+  function defaultVisitor(value, key, path5) {
     let arr = value;
     if (utils_default.isReactNative(formData) && utils_default.isReactNativeBlob(value)) {
-      formData.append(renderKey(path4, key, dots), convertValue(value));
+      formData.append(renderKey(path5, key, dots), convertValue(value));
       return false;
     }
-    if (value && !path4 && typeof value === "object") {
+    if (value && !path5 && typeof value === "object") {
       if (utils_default.endsWith(key, "{}")) {
         key = metaTokens ? key : key.slice(0, -2);
         value = stringifyWithDepthLimit(value, 1);
@@ -15181,7 +15174,7 @@ function toFormData(obj, formData, options) {
     if (isVisitable(value)) {
       return true;
     }
-    formData.append(renderKey(path4, key, dots), convertValue(value));
+    formData.append(renderKey(path5, key, dots), convertValue(value));
     return false;
   }
   const exposedHelpers = Object.assign(predicates, {
@@ -15189,17 +15182,17 @@ function toFormData(obj, formData, options) {
     convertValue,
     isVisitable
   });
-  function build(value, path4, depth = 0) {
+  function build(value, path5, depth = 0) {
     if (utils_default.isUndefined(value)) return;
     throwIfMaxDepthExceeded(depth);
     if (stack.indexOf(value) !== -1) {
-      throw new Error("Circular reference detected in " + path4.join("."));
+      throw new Error("Circular reference detected in " + path5.join("."));
     }
     stack.push(value);
     utils_default.forEach(value, function each(el, key) {
-      const result = !(utils_default.isUndefined(el) || el === null) && visitor.call(formData, el, utils_default.isString(key) ? key.trim() : key, path4, exposedHelpers);
+      const result = !(utils_default.isUndefined(el) || el === null) && visitor.call(formData, el, utils_default.isString(key) ? key.trim() : key, path5, exposedHelpers);
       if (result === true) {
-        build(el, path4 ? path4.concat(key) : [key], depth + 1);
+        build(el, path5 ? path5.concat(key) : [key], depth + 1);
       }
     });
     stack.pop();
@@ -15492,7 +15485,7 @@ var platform_default = {
 // node_modules/axios/lib/helpers/toURLEncodedForm.js
 function toURLEncodedForm(data, options) {
   return toFormData_default(data, new platform_default.classes.URLSearchParams(), {
-    visitor: function(value, key, path4, helpers) {
+    visitor: function(value, key, path5, helpers) {
       if (platform_default.isNode && utils_default.isBuffer(value)) {
         this.append(key, value.toString("base64"));
         return false;
@@ -15514,14 +15507,14 @@ function throwIfDepthExceeded(index) {
   }
 }
 function parsePropPath(name) {
-  const path4 = [];
+  const path5 = [];
   const pattern = /[^.[\]]+|\[([^.[\]]*)]/g;
   let match;
   while ((match = pattern.exec(name)) !== null) {
-    throwIfDepthExceeded(path4.length);
-    path4.push(match[0] === "[]" ? "" : match[1] || match[0]);
+    throwIfDepthExceeded(path5.length);
+    path5.push(match[0] === "[]" ? "" : match[1] || match[0]);
   }
-  return path4;
+  return path5;
 }
 function arrayToObject(arr) {
   const obj = {};
@@ -15554,12 +15547,12 @@ function normalizeArrays(obj) {
   return obj;
 }
 function formDataToJSON(formData) {
-  function buildPath(path4, value, target, index) {
+  function buildPath(path5, value, target, index) {
     throwIfDepthExceeded(index);
-    let name = path4[index++];
+    let name = path5[index++];
     if (name === "__proto__") return true;
     const isNumericKey = Number.isFinite(+name);
-    const isLast = index >= path4.length;
+    const isLast = index >= path5.length;
     name = !name && utils_default.isArray(target) ? target.length : name;
     if (isLast) {
       if (utils_default.hasOwnProp(target, name)) {
@@ -15573,7 +15566,7 @@ function formDataToJSON(formData) {
     if (!utils_default.hasOwnProp(target, name) || !utils_default.isObject(target[name])) {
       target[name] = [];
     }
-    const result = buildPath(path4, value, target[name], index);
+    const result = buildPath(path5, value, target[name], index);
     if (result && utils_default.isArray(target[name])) {
       target[name] = arrayToObject(target[name]);
     }
@@ -17595,9 +17588,9 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config) {
       auth = urlUsername + ":" + urlPassword;
     }
     auth && headers.delete("authorization");
-    let path4;
+    let path5;
     try {
-      path4 = buildURL(
+      path5 = buildURL(
         parsed.pathname + parsed.search,
         own2("params"),
         own2("paramsSerializer")
@@ -17619,7 +17612,7 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config) {
       http2Options = Object.assign(/* @__PURE__ */ Object.create(null), http2Options, { lookup });
     }
     const options = Object.assign(/* @__PURE__ */ Object.create(null), {
-      path: path4,
+      path: path5,
       method,
       headers: toByteStringHeaderObject(headers),
       agents: { http: httpAgent, https: httpsAgent },
@@ -18036,14 +18029,14 @@ var decodeCookieValue = (value) => {
 var cookies_default = platform_default.hasStandardBrowserEnv ? (
   // Standard browser envs support document.cookie
   {
-    write(name, value, expires, path4, domain, secure, sameSite) {
+    write(name, value, expires, path5, domain, secure, sameSite) {
       if (typeof document === "undefined") return;
       const cookie = [`${name}=${encodeURIComponent(value)}`];
       if (utils_default.isNumber(expires)) {
         cookie.push(`expires=${new Date(expires).toUTCString()}`);
       }
-      if (utils_default.isString(path4)) {
-        cookie.push(`path=${path4}`);
+      if (utils_default.isString(path5)) {
+        cookie.push(`path=${path5}`);
       }
       if (utils_default.isString(domain)) {
         cookie.push(`domain=${domain}`);
@@ -20160,7 +20153,7 @@ async function writeBuffer(file_path, buffer) {
 }
 
 // src/lib/cms.ts
-var import_path4 = __toESM(require("path"));
+var import_path5 = __toESM(require("path"));
 
 // src/api/getDataFile.ts
 var import_path3 = __toESM(require("path"));
@@ -20478,8 +20471,100 @@ function validateConcurrency(concurrency) {
   }
 }
 
+// src/lib/incremental.ts
+var import_fs4 = __toESM(require("fs"));
+var import_path4 = __toESM(require("path"));
+var release_file = "release.json";
+function toString3(value) {
+  return typeof value === "string" && value !== "" ? value : void 0;
+}
+function readRelease(site_id) {
+  try {
+    const json = JSON.parse(
+      import_fs4.default.readFileSync(`${getCacheRootPath(site_id)}/${release_file}`, "utf8")
+    );
+    return toString3(json?.release) ?? null;
+  } catch {
+    return null;
+  }
+}
+function writeRelease(folder, release) {
+  const file_path = `${getCacheRootPath(folder)}/${release_file}`;
+  if (!release) {
+    removePath(file_path);
+    return;
+  }
+  import_fs4.default.writeFileSync(
+    file_path,
+    JSON.stringify({ release, updated_at: (/* @__PURE__ */ new Date()).toISOString() })
+  );
+}
+function prepareTemporaryFolder(temporary_folder, site_id, release) {
+  const temp_path = getCacheRootPath(temporary_folder);
+  const site_path = getCacheRootPath(site_id);
+  removePath(temp_path);
+  const is_incremental = !!release.changes && !!release.base && import_fs4.default.existsSync(site_path) && readRelease(site_id) === release.base;
+  if (is_incremental) {
+    import_fs4.default.cpSync(site_path, temp_path, { recursive: true, dereference: true });
+    return "incremental";
+  }
+  import_fs4.default.mkdirSync(temp_path, { recursive: true });
+  return "full";
+}
+function fileNameFromPath(file_path) {
+  return file_path.startsWith("http") ? import_path4.default.basename(file_path) : file_path;
+}
+function needsTransfer(changes, key, id, cached_path) {
+  return !changes || changes[key].includes(id) || !import_fs4.default.existsSync(cached_path);
+}
+function pruneFolder(folder_path, keep) {
+  if (!import_fs4.default.existsSync(folder_path)) {
+    return;
+  }
+  const keep_set = new Set(keep);
+  for (const entry of import_fs4.default.readdirSync(folder_path, { withFileTypes: true })) {
+    if (entry.isFile() && !keep_set.has(entry.name)) {
+      import_fs4.default.rmSync(import_path4.default.join(folder_path, entry.name), { force: true });
+    }
+  }
+}
+function pruneOrphans(temporary_folder, data) {
+  const prune = (list, content_type, folder, toFileName) => {
+    if (!Array.isArray(list)) {
+      return;
+    }
+    pruneFolder(
+      getCachePath(temporary_folder, content_type, folder),
+      list.map(toFileName).filter((name) => !!name)
+    );
+  };
+  prune(
+    data.tiles,
+    "content",
+    "tile",
+    (tile) => tile?.tile_id && `${tile.tile_id}.json`
+  );
+  prune(
+    data.pages,
+    "content",
+    "page",
+    (page) => page?.slug && `${page.slug}.json`
+  );
+  prune(
+    data.images,
+    "images",
+    false,
+    (image) => image?.url && fileNameFromPath(image.url)
+  );
+  prune(
+    data.sources,
+    "source",
+    false,
+    (source) => source?.url && fileNameFromPath(source.url)
+  );
+}
+
 // src/lib/cms.ts
-var temporary_folder = "temp";
 function buildFullUrl(url2, site_id = "default") {
   if (!url2) {
     return null;
@@ -20489,9 +20574,9 @@ function buildFullUrl(url2, site_id = "default") {
   }
   return `/${site_id !== "default" ? site_id : ""}/${url2}`.replace(/\/+/g, "/");
 }
-async function fetchFromStatamic(sites) {
+async function fetchFromStatamic(sites, release = {}) {
   const results = [];
-  const rebuild_results = await rebuildCache(sites);
+  const rebuild_results = await rebuildCache(sites, release);
   const rebuild_success = rebuild_results.every(
     (result) => result.success === true
   );
@@ -20505,7 +20590,7 @@ async function fetchFromStatamic(sites) {
   const endpoint = getCMSEndpoint();
   return { message, endpoint, results, success: overall_success };
 }
-async function fetchFromRemote(site_id = "default", content_type = "content", collection_id, id, options) {
+async function fetchFromRemote(temporary_folder, site_id = "default", content_type = "content", collection_id, id, options) {
   const base_url = getCMSEndpoint();
   const parts = [content_type, collection_id, id].filter(Boolean);
   const endpoint = `${base_url}${parts.join("/")}?site_id=${site_id}&secret=${process.env.API_SECRET}`;
@@ -20533,11 +20618,17 @@ async function fetchGlobalHandles(site_id = "default") {
   }
   return payload.map((entry) => entry?.handle).filter((handle) => typeof handle === "string");
 }
-async function fetchContent(site_id = "default", collection_id, id) {
+async function fetchContent(temporary_folder, site_id = "default", collection_id, id) {
   const singular_id = collection_id.endsWith("s") ? collection_id.slice(0, -1) : collection_id;
-  return await fetchFromRemote(site_id, "content", singular_id, id);
+  return await fetchFromRemote(
+    temporary_folder,
+    site_id,
+    "content",
+    singular_id,
+    id
+  );
 }
-async function createPopulatedCollection(collection_id, site_id = "default") {
+async function createPopulatedCollection(temporary_folder, collection_id, site_id = "default") {
   const json_data = getFileContent(
     temporary_folder,
     "collection",
@@ -20645,7 +20736,7 @@ async function createPopulatedCollection(collection_id, site_id = "default") {
   );
   return collection;
 }
-async function createPopulatedNavigation(handle, site_id = "default") {
+async function createPopulatedNavigation(temporary_folder, handle, site_id = "default") {
   const json_data = getFileContent(
     temporary_folder,
     "navigation",
@@ -20694,16 +20785,21 @@ async function createPopulatedNavigation(handle, site_id = "default") {
   );
   return populated;
 }
-async function downloadFile(site_id, file_path, folder) {
-  const endpoint = file_path.startsWith("http") ? file_path : getCMSEndpoint(import_path4.default.join(folder, file_path));
-  const file_name = file_path.startsWith("http") ? import_path4.default.basename(file_path) : file_path;
+async function downloadFile(temporary_folder, file_path, folder) {
+  const endpoint = file_path.startsWith("http") ? file_path : getCMSEndpoint(import_path5.default.join(folder, file_path));
+  const target = getCachePath(
+    temporary_folder,
+    folder,
+    fileNameFromPath(file_path)
+  );
+  removePath(target);
   const content = await fetchFile(endpoint);
   if (!content) {
     return false;
   }
-  await writeBuffer(getCachePath(temporary_folder, folder, file_name), content);
+  await writeBuffer(target, content);
 }
-async function rebuildCache(sites) {
+async function rebuildCache(sites, release = {}) {
   if (!sites || sites.length === 0) {
     return [];
   }
@@ -20711,14 +20807,29 @@ async function rebuildCache(sites) {
   const results = await Promise.all(
     sites.map(async (site) => {
       const name = "site::" + site;
+      const temporary_folder = `temp-${site}`;
       try {
-        ensureCacheFolder(temporary_folder);
-        const fetch_result = await fetchForSite(site);
+        const mode = prepareTemporaryFolder(temporary_folder, site, release);
+        console.log(
+          `\u2139\uFE0F Rebuild mode for site ${site}: ${mode} (base: ${release.base ?? "-"}, release: ${release.release ?? "-"})`
+        );
+        const fetch_result = await fetchForSite(
+          temporary_folder,
+          site,
+          mode === "incremental" ? release.changes : void 0
+        );
         if (fetch_result.every((result) => result.success === true)) {
+          writeRelease(temporary_folder, release.release);
           await moveTemporaryFolder(temporary_folder, site);
-          return { name, success: true, result: fetch_result };
+          return {
+            name,
+            success: true,
+            mode,
+            release: release.release ?? null,
+            result: fetch_result
+          };
         }
-        return { name, success: false, result: fetch_result };
+        return { name, success: false, mode, result: fetch_result };
       } catch (e) {
         console.error(`\u274C Error fetching site: ${site}`, e);
         return { name, success: false, result: e };
@@ -20727,7 +20838,7 @@ async function rebuildCache(sites) {
   );
   return results;
 }
-async function fetchForSite(site_id) {
+async function fetchForSite(temporary_folder, site_id, changes) {
   const collections = process.env.SET_COLLECTIONS ? process.env.SET_COLLECTIONS.split(",") : ["pages", "sources", "images", "tiles"];
   const taxonomies = process.env.SET_TAXONOMIES ? process.env.SET_TAXONOMIES.split(",") : ["icons", "action_fields", "sdg_targets"];
   const global2 = process.env.SET_GLOBAL ? process.env.SET_GLOBAL.split(",") : await fetchGlobalHandles(site_id);
@@ -20735,16 +20846,33 @@ async function fetchForSite(site_id) {
   const results = [];
   const limit = pLimit(10);
   const collection_results = await Promise.all(
-    collections.map((c) => fetchFromRemote(site_id, "collection", c))
+    collections.map(
+      (c) => fetchFromRemote(temporary_folder, site_id, "collection", c)
+    )
   );
-  collections.forEach((c, i) => data[c] = collection_results[i]);
+  collections.forEach((c, i) => {
+    data[c] = collection_results[i];
+    if (changes) {
+      results.push({ name: "collection::" + c, success: !!data[c] });
+    }
+  });
+  if (changes) {
+    pruneOrphans(temporary_folder, data);
+  }
   const tasks_content = [];
   const tasks_files = [];
   let navigation_handles = [];
-  (data.tiles ?? []).forEach(
+  (data.tiles ?? []).filter(
+    (tile) => needsTransfer(
+      changes,
+      "tiles",
+      tile.tile_id,
+      getCachedFilePath(temporary_folder, "content", "tile", tile.tile_id)
+    )
+  ).forEach(
     (tile) => tasks_content.push(
       limit(
-        () => fetchContent(site_id, "tile", tile.tile_id).then(
+        () => fetchContent(temporary_folder, site_id, "tile", tile.tile_id).then(
           (r) => results.push({ name: "tile::" + tile.tile_id, success: !!r })
         )
       )
@@ -20753,7 +20881,7 @@ async function fetchForSite(site_id) {
   (data.pages ?? []).forEach(
     (page) => tasks_content.push(
       limit(
-        () => fetchContent(site_id, "page", page.slug).then(
+        () => fetchContent(temporary_folder, site_id, "page", page.slug).then(
           (r) => results.push({ name: "page::" + page.slug, success: !!r })
         )
       )
@@ -20762,7 +20890,7 @@ async function fetchForSite(site_id) {
   taxonomies.forEach(
     (t) => tasks_content.push(
       limit(
-        () => fetchFromRemote(site_id, "taxonomy", t).then(
+        () => fetchFromRemote(temporary_folder, site_id, "taxonomy", t).then(
           (r) => results.push({ name: "taxonomy::" + t, success: !!r })
         )
       )
@@ -20771,7 +20899,7 @@ async function fetchForSite(site_id) {
   global2.forEach(
     (g) => tasks_content.push(
       limit(
-        () => fetchFromRemote(site_id, "global", g).then(
+        () => fetchFromRemote(temporary_folder, site_id, "global", g).then(
           (r) => results.push({ name: "global::" + g, success: !!r })
         )
       )
@@ -20780,6 +20908,7 @@ async function fetchForSite(site_id) {
   tasks_content.push(
     limit(async () => {
       const list_payload = await fetchFromRemote(
+        temporary_folder,
         site_id,
         "navigation",
         void 0,
@@ -20791,9 +20920,14 @@ async function fetchForSite(site_id) {
       await Promise.all(
         navigation_handles.map(
           (handle) => limit(
-            () => fetchFromRemote(site_id, "navigation", handle, void 0, {
-              silentNotFound: true
-            }).then(
+            () => fetchFromRemote(
+              temporary_folder,
+              site_id,
+              "navigation",
+              handle,
+              void 0,
+              { silentNotFound: true }
+            ).then(
               (r) => results.push({ name: "navigation::" + handle, success: !!r })
             )
           )
@@ -20801,26 +20935,27 @@ async function fetchForSite(site_id) {
       );
     })
   );
-  (data.images ?? []).forEach(
-    (image) => tasks_files.push(
-      limit(
-        () => downloadFile(site_id, image.url, "images").then(
-          (r) => results.push({
-            name: "image::" + image.file_name,
-            success: r !== null
-          })
-        )
+  const files = [
+    { list: "images", folder: "images", key: "images" },
+    { list: "sources", folder: "source", key: "sources" }
+  ];
+  files.forEach(
+    ({ list, folder, key }) => (data[list] ?? []).filter(
+      (file) => needsTransfer(
+        changes,
+        key,
+        file.file_name,
+        getCachePath(temporary_folder, folder, fileNameFromPath(file.url))
       )
-    )
-  );
-  (data.sources ?? []).forEach(
-    (source) => tasks_files.push(
-      limit(
-        () => downloadFile(site_id, source.url, "source").then(
-          (r) => results.push({
-            name: "source::" + source.file_name,
-            success: r !== null
-          })
+    ).forEach(
+      (file) => tasks_files.push(
+        limit(
+          () => downloadFile(temporary_folder, file.url, folder).then(
+            (r) => results.push({
+              name: `${key.slice(0, -1)}::${file.file_name}`,
+              success: r !== null
+            })
+          )
         )
       )
     )
@@ -20836,7 +20971,7 @@ async function fetchForSite(site_id) {
   console.log(`\u2139\uFE0F Fetched ${results.length} items for site: ${site_id}`);
   for (const c of collections) {
     console.log(`\u2139\uFE0F Creating populated collection: ${c} (${site_id})`);
-    const result = await createPopulatedCollection(c, site_id);
+    const result = await createPopulatedCollection(temporary_folder, c, site_id);
     results.push({
       name: "populated_collection::" + c,
       success: result !== null
@@ -20847,7 +20982,11 @@ async function fetchForSite(site_id) {
   );
   for (const handle of navigation_handles) {
     console.log(`\u2139\uFE0F Creating populated navigation: ${handle} (${site_id})`);
-    const result = await createPopulatedNavigation(handle, site_id);
+    const result = await createPopulatedNavigation(
+      temporary_folder,
+      handle,
+      site_id
+    );
     results.push({
       name: "populated_navigation::" + handle,
       success: result !== null

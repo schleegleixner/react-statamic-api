@@ -37,7 +37,7 @@ function supportsSymlinks(): boolean {
   }
 }
 
-function removePath(target: string): void {
+export function removePath(target: string): void {
   try {
     const stats = fs.lstatSync(target)
     if (stats.isSymbolicLink()) {

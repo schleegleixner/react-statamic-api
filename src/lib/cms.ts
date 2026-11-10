@@ -7,19 +7,31 @@ import {
 import { fetchFile, fetchJSON, getCMSEndpoint } from '../utils/api'
 import path from 'path'
 import {
-  ensureCacheFolder,
   moveTemporaryFolder,
   getCachePath,
+  getCachedFilePath,
+  removePath,
 } from '../utils/filesystem'
 import getDataFile from '../api/getDataFile'
 import { getTimeline } from '../utils/sources'
-import { RebuildResult, ResultType, StepResultType } from '../types/cms'
+import {
+  FlushChanges,
+  FlushRelease,
+  RebuildResult,
+  ResultType,
+  StepResultType,
+} from '../types/cms'
 import { PageMappingType } from '../types/pages'
 import pLimit from 'p-limit'
 import { sanitizeString } from '../utils/sanitize'
 import { getFileContent } from '../response/responseContent'
-
-const temporary_folder = 'temp'
+import {
+  fileNameFromPath,
+  needsTransfer,
+  prepareTemporaryFolder,
+  pruneOrphans,
+  writeRelease,
+} from './incremental'
 
 function buildFullUrl(
   url: string | undefined | null,
@@ -34,10 +46,13 @@ function buildFullUrl(
   return `/${site_id !== 'default' ? site_id : ''}/${url}`.replace(/\/+/g, '/')
 }
 
-export async function fetchFromStatamic(sites: string[]): Promise<ResultType> {
+export async function fetchFromStatamic(
+  sites: string[],
+  release: FlushRelease = {},
+): Promise<ResultType> {
   const results: StepResultType[] = []
 
-  const rebuild_results = await rebuildCache(sites)
+  const rebuild_results = await rebuildCache(sites, release)
   const rebuild_success = rebuild_results.every(
     result => result.success === true,
   )
@@ -58,6 +73,7 @@ export async function fetchFromStatamic(sites: string[]): Promise<ResultType> {
 }
 
 async function fetchFromRemote(
+  temporary_folder: string,
   site_id: string = 'default',
   content_type: string = 'content',
   collection_id?: string,
@@ -107,6 +123,7 @@ async function fetchGlobalHandles(
 }
 
 async function fetchContent(
+  temporary_folder: string,
   site_id: string = 'default',
   collection_id: string,
   id?: string | number,
@@ -115,10 +132,17 @@ async function fetchContent(
     ? collection_id.slice(0, -1)
     : collection_id
 
-  return await fetchFromRemote(site_id, 'content', singular_id, id)
+  return await fetchFromRemote(
+    temporary_folder,
+    site_id,
+    'content',
+    singular_id,
+    id,
+  )
 }
 
 async function createPopulatedCollection(
+  temporary_folder: string,
   collection_id: string,
   site_id: string = 'default',
 ): Promise<any> {
@@ -284,6 +308,7 @@ type NavItemPopulated = {
 }
 
 async function createPopulatedNavigation(
+  temporary_folder: string,
   handle: string,
   site_id: string = 'default',
 ): Promise<{
@@ -389,7 +414,7 @@ export async function getAPI(
 }
 
 async function downloadFile(
-  site_id: string,
+  temporary_folder: string,
   file_path: string,
   folder: string,
 ): Promise<any> {
@@ -397,20 +422,28 @@ async function downloadFile(
   const endpoint = file_path.startsWith('http')
     ? file_path
     : getCMSEndpoint(path.join(folder, file_path))
-  const file_name = file_path.startsWith('http')
-    ? path.basename(file_path)
-    : file_path
+  const target = getCachePath(
+    temporary_folder,
+    folder,
+    fileNameFromPath(file_path),
+  )
+  // drop an outdated copy first: a failed download then leaves the file
+  // missing, so the next incremental flush retries it
+  removePath(target)
   const content = await fetchFile(endpoint)
 
   if (!content) {
     return false
   }
 
-  await writeBuffer(getCachePath(temporary_folder, folder, file_name), content)
+  await writeBuffer(target, content)
 }
 
 // rebuild the cache for all sites
-export async function rebuildCache(sites: string[]): Promise<RebuildResult[]> {
+export async function rebuildCache(
+  sites: string[],
+  release: FlushRelease = {},
+): Promise<RebuildResult[]> {
   // if no sites are defined, use a default site
   if (!sites || sites.length === 0) {
     return []
@@ -422,16 +455,33 @@ export async function rebuildCache(sites: string[]): Promise<RebuildResult[]> {
   const results = await Promise.all(
     sites.map(async site => {
       const name = 'site::' + site
+      // one temporary folder per site, so parallel rebuilds can't mix
+      const temporary_folder = `temp-${site}`
       try {
-        ensureCacheFolder(temporary_folder)
-        const fetch_result = await fetchForSite(site)
+        const mode = prepareTemporaryFolder(temporary_folder, site, release)
+        // eslint-disable-next-line no-console
+        console.log(
+          `ℹ️ Rebuild mode for site ${site}: ${mode} (base: ${release.base ?? '-'}, release: ${release.release ?? '-'})`,
+        )
+        const fetch_result = await fetchForSite(
+          temporary_folder,
+          site,
+          mode === 'incremental' ? release.changes : undefined,
+        )
 
         // check if any step failed
         if (fetch_result.every(result => result.success === true)) {
+          writeRelease(temporary_folder, release.release)
           await moveTemporaryFolder(temporary_folder, site)
-          return { name, success: true, result: fetch_result }
+          return {
+            name,
+            success: true,
+            mode,
+            release: release.release ?? null,
+            result: fetch_result,
+          }
         }
-        return { name, success: false, result: fetch_result }
+        return { name, success: false, mode, result: fetch_result }
       } catch (e) {
         // eslint-disable-next-line no-console
         console.error(`❌ Error fetching site: ${site}`, e)
@@ -443,8 +493,15 @@ export async function rebuildCache(sites: string[]): Promise<RebuildResult[]> {
   return results
 }
 
-// fetch all data for a specific site
-async function fetchForSite(site_id: string) {
+// fetch all data for a specific site. With `changes` the temporary folder
+// already holds a copy of the current cache: lists, pages, taxonomies,
+// globals and navigation are refetched anyway, tiles and files only when
+// changed or missing, and items that vanished from the lists are removed.
+async function fetchForSite(
+  temporary_folder: string,
+  site_id: string,
+  changes?: FlushChanges,
+) {
   const collections = process.env.SET_COLLECTIONS
     ? process.env.SET_COLLECTIONS.split(',')
     : ['pages', 'sources', 'images', 'tiles']
@@ -462,27 +519,48 @@ async function fetchForSite(site_id: string) {
   const limit = pLimit(10) // limit concurrent requests
 
   const collection_results = await Promise.all(
-    collections.map(c => fetchFromRemote(site_id, 'collection', c)),
+    collections.map(c =>
+      fetchFromRemote(temporary_folder, site_id, 'collection', c),
+    ),
   )
-  collections.forEach((c, i) => (data[c] = collection_results[i]))
+  collections.forEach((c, i) => {
+    data[c] = collection_results[i]
+    // a stale list copied from the cache must not pass as fresh
+    if (changes) {
+      results.push({ name: 'collection::' + c, success: !!data[c] })
+    }
+  })
+
+  if (changes) {
+    pruneOrphans(temporary_folder, data)
+  }
 
   const tasks_content: Promise<any>[] = []
   const tasks_files: Promise<any>[] = []
   let navigation_handles: string[] = []
 
-  ;(data.tiles ?? []).forEach((tile: { tile_id: string }) =>
-    tasks_content.push(
-      limit(() =>
-        fetchContent(site_id, 'tile', tile.tile_id).then(r =>
-          results.push({ name: 'tile::' + tile.tile_id, success: !!r }),
+  ;(data.tiles ?? [])
+    .filter((tile: { tile_id: string }) =>
+      needsTransfer(
+        changes,
+        'tiles',
+        tile.tile_id,
+        getCachedFilePath(temporary_folder, 'content', 'tile', tile.tile_id),
+      ),
+    )
+    .forEach((tile: { tile_id: string }) =>
+      tasks_content.push(
+        limit(() =>
+          fetchContent(temporary_folder, site_id, 'tile', tile.tile_id).then(
+            r => results.push({ name: 'tile::' + tile.tile_id, success: !!r }),
+          ),
         ),
       ),
-    ),
-  )
+    )
   ;(data.pages ?? []).forEach((page: { slug: string }) =>
     tasks_content.push(
       limit(() =>
-        fetchContent(site_id, 'page', page.slug).then(r =>
+        fetchContent(temporary_folder, site_id, 'page', page.slug).then(r =>
           results.push({ name: 'page::' + page.slug, success: !!r }),
         ),
       ),
@@ -492,7 +570,7 @@ async function fetchForSite(site_id: string) {
   taxonomies.forEach(t =>
     tasks_content.push(
       limit(() =>
-        fetchFromRemote(site_id, 'taxonomy', t).then(r =>
+        fetchFromRemote(temporary_folder, site_id, 'taxonomy', t).then(r =>
           results.push({ name: 'taxonomy::' + t, success: !!r }),
         ),
       ),
@@ -502,7 +580,7 @@ async function fetchForSite(site_id: string) {
   global.forEach(g =>
     tasks_content.push(
       limit(() =>
-        fetchFromRemote(site_id, 'global', g).then(r =>
+        fetchFromRemote(temporary_folder, site_id, 'global', g).then(r =>
           results.push({ name: 'global::' + g, success: !!r }),
         ),
       ),
@@ -512,6 +590,7 @@ async function fetchForSite(site_id: string) {
   tasks_content.push(
     limit(async () => {
       const list_payload = (await fetchFromRemote(
+        temporary_folder,
         site_id,
         'navigation',
         undefined,
@@ -525,9 +604,14 @@ async function fetchForSite(site_id: string) {
       await Promise.all(
         navigation_handles.map(handle =>
           limit(() =>
-            fetchFromRemote(site_id, 'navigation', handle, undefined, {
-              silentNotFound: true,
-            }).then(r =>
+            fetchFromRemote(
+              temporary_folder,
+              site_id,
+              'navigation',
+              handle,
+              undefined,
+              { silentNotFound: true },
+            ).then(r =>
               results.push({ name: 'navigation::' + handle, success: !!r }),
             ),
           ),
@@ -536,30 +620,33 @@ async function fetchForSite(site_id: string) {
     }),
   )
 
-  // only download images and sources for the default site
-  ;(data.images ?? []).forEach((image: { url: string; file_name: string }) =>
-    tasks_files.push(
-      limit(() =>
-        downloadFile(site_id, image.url, 'images').then(r =>
-          results.push({
-            name: 'image::' + image.file_name,
-            success: r !== null,
-          }),
+  const files: { list: string; folder: string; key: keyof FlushChanges }[] = [
+    { list: 'images', folder: 'images', key: 'images' },
+    { list: 'sources', folder: 'source', key: 'sources' },
+  ]
+
+  files.forEach(({ list, folder, key }) =>
+    (data[list] ?? [])
+      .filter((file: { url: string; file_name: string }) =>
+        needsTransfer(
+          changes,
+          key,
+          file.file_name,
+          getCachePath(temporary_folder, folder, fileNameFromPath(file.url)),
+        ),
+      )
+      .forEach((file: { url: string; file_name: string }) =>
+        tasks_files.push(
+          limit(() =>
+            downloadFile(temporary_folder, file.url, folder).then(r =>
+              results.push({
+                name: `${key.slice(0, -1)}::${file.file_name}`,
+                success: r !== null,
+              }),
+            ),
+          ),
         ),
       ),
-    ),
-  )
-  ;(data.sources ?? []).forEach((source: { url: string; file_name: string }) =>
-    tasks_files.push(
-      limit(() =>
-        downloadFile(site_id, source.url, 'source').then(r =>
-          results.push({
-            name: 'source::' + source.file_name,
-            success: r !== null,
-          }),
-        ),
-      ),
-    ),
   )
 
   // eslint-disable-next-line no-console
@@ -580,7 +667,7 @@ async function fetchForSite(site_id: string) {
   for (const c of collections) {
     // eslint-disable-next-line no-console
     console.log(`ℹ️ Creating populated collection: ${c} (${site_id})`)
-    const result = await createPopulatedCollection(c, site_id)
+    const result = await createPopulatedCollection(temporary_folder, c, site_id)
     results.push({
       name: 'populated_collection::' + c,
       success: result !== null,
@@ -595,7 +682,11 @@ async function fetchForSite(site_id: string) {
   for (const handle of navigation_handles) {
     // eslint-disable-next-line no-console
     console.log(`ℹ️ Creating populated navigation: ${handle} (${site_id})`)
-    const result = await createPopulatedNavigation(handle, site_id)
+    const result = await createPopulatedNavigation(
+      temporary_folder,
+      handle,
+      site_id,
+    )
     results.push({
       name: 'populated_navigation::' + handle,
       success: result !== null,
